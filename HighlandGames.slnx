@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="highlandgames.client/highlandgames.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="HighlandGames.Server/HighlandGames.Server.csproj" />
+</Solution>

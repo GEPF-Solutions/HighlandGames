@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+
+:root {
+    --green-dark: #0e2218;
+    --green-mid: #1a3d2b;
+    --green-light: #2d6b47;
+    --gold: #c9943a;
+    --gold-light: #e8b85a;
+    --cream: #f0e6cc;
+    --cream-dark: #d9c9a8;
+    --red: #7a1c1c;
+    --navy: #0d1b2a;
+    --text-dark: #1a1208;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'EB Garamond', Georgia, serif;
+    background: var(--green-dark);
+    color: var(--cream);
+    min-height: 100vh;
+}
+
+.tartan {
+    background-color: var(--green-dark);
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(122,28,28,.18) 28px, rgba(122,28,28,.18) 36px), repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(122,28,28,.18) 28px, rgba(122,28,28,.18) 36px), repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(201,148,58,.10) 60px, rgba(201,148,58,.10) 64px), repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(201,148,58,.10) 60px, rgba(201,148,58,.10) 64px);
+}
+
+@keyframes pulse {
+    0%,100% {
+        opacity: 1
+    }
+
+    50% {
+        opacity: .3
+    }
+}
+
+@keyframes slowRot {
+    to {
+        transform: translate(-50%,-50%) rotate(360deg);
+    }
+}
+
+@keyframes pageIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px)
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0)
+    }
+}
+
+.page-enter {
+    animation: pageIn .3s ease both;
+}
