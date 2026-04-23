@@ -8,7 +8,7 @@ namespace HighlandGames.Server.Repositories
     {
         public async Task<IEnumerable<Result>> GetAllAsync()
         {
-            return await db.Results.Include(r => r.Team).Include(r => r.DisciplineId).ToListAsync();
+            return await db.Results.Include(r => r.Team).ToListAsync();
         }
 
         public async Task<IEnumerable<Result>> GetByDisciplineAsync(string disciplineId)
@@ -18,7 +18,7 @@ namespace HighlandGames.Server.Repositories
 
         public async Task<IEnumerable<Result>> GetByTeamAsync(Guid teamId)
         {
-            return await db.Results.Include(r => r.Discipline).Where(r => r.TeamId == teamId).ToListAsync();
+            return await db.Results.Where(r => r.TeamId == teamId).ToListAsync();
         }
 
         public async Task<Result?> GetByTeamAndDisciplineAsync(Guid teamId, string disciplineId)

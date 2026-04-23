@@ -1,15 +1,15 @@
-import { DISCIPLINES, MATCHES, getTotalPoints } from '../data/mockData';
 import { Separator } from '../components/Separator';
+import { useHomePage } from '../hooks/useHomePage';
 
 interface HomePageProps {
     navigate: (page: string) => void;
 }
 
 export function HomePage({ navigate }: HomePageProps) {
-    const liveMatch = MATCHES.find(m => m.status === 'live');
-    const nextMatch = MATCHES.find(m => m.status === 'next');
-    const mLead = getTotalPoints('m')[0];
-    const fLead = getTotalPoints('f')[0];
+    const { disciplines, mLeaderboard, fLeaderboard, liveDisc, nextDisc, loading } = useHomePage();
+
+    const mLead = mLeaderboard[0];
+    const fLead = fLeaderboard[0];
 
     return (
         <div className="page-enter">
@@ -88,7 +88,7 @@ export function HomePage({ navigate }: HomePageProps) {
             </section>
 
             {/* Live Banner */}
-            {liveMatch && (
+            {liveDisc && (
                 <div style={{
                     background: 'rgba(122,28,28,.55)',
                     borderTop: '1px solid rgba(200,60,60,.3)',
@@ -100,9 +100,9 @@ export function HomePage({ navigate }: HomePageProps) {
                         LIVE
                     </span>
                     <span style={{ fontFamily: 'Cinzel, serif', fontSize: 14, color: 'var(--cream)' }}>
-                        Spiel {liveMatch.id}: {liveMatch.name}
+                        Spiel {liveDisc.number}: {liveDisc.name}
                     </span>
-                    <button onClick={() => navigate('disc-' + liveMatch.discId)} style={{
+                    <button onClick={() => navigate('disc-' + liveDisc.id)} style={{
                         marginLeft: 'auto', fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2,
                         textTransform: 'uppercase', padding: '8px 18px', borderRadius: 2,
                         cursor: 'pointer', background: 'transparent', color: 'var(--cream)',
@@ -127,32 +127,42 @@ export function HomePage({ navigate }: HomePageProps) {
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-                        {([
-                            { label: 'Männer – Führung', lead: mLead, color: '#7aadff', page: 'results' },
-                            { label: 'Frauen – Führung', lead: fLead, color: '#ff8aaa', page: 'results' },
-                        ] as const).map(({ label, lead, color, page }) => (
-                            <div key={label} onClick={() => navigate(page)} style={{
+                        {!loading && mLead && (
+                            <div onClick={() => navigate('results')} style={{
                                 background: 'var(--green-dark)', border: '1px solid rgba(201,148,58,.15)',
-                                padding: 28, cursor: 'pointer', transition: 'border-color .25s, transform .2s',
-                                borderRadius: 2,
+                                padding: 28, cursor: 'pointer', borderRadius: 2, transition: 'border-color .25s, transform .2s',
                             }}>
-                                <div style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3, color, marginBottom: 8, textTransform: 'uppercase' }}>{label}</div>
-                                <div style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 22, color: 'var(--cream)', marginBottom: 4 }}>🥇 {lead.name}</div>
-                                <div style={{ fontSize: 16, color: 'var(--cream-dark)', opacity: .8 }}>{lead.total} Punkte · {lead.club}</div>
-                                <div style={{ marginTop: 16, fontSize: 13, color, opacity: .7, fontFamily: 'Cinzel, serif', letterSpacing: 1 }}>Vollständige Wertung →</div>
+                                <div style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3, color: '#7aadff', marginBottom: 8, textTransform: 'uppercase' }}>Männer – Führung</div>
+                                <div style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 22, color: 'var(--cream)', marginBottom: 4 }}>🥇 {mLead.teamName}</div>
+                                <div style={{ fontSize: 16, color: 'var(--cream-dark)', opacity: .8 }}>{mLead.totalPoints} Punkte</div>
+                                <div style={{ marginTop: 16, fontSize: 13, color: '#7aadff', opacity: .7, fontFamily: 'Cinzel, serif', letterSpacing: 1 }}>Vollständige Wertung →</div>
                             </div>
-                        ))}
+                        )}
+
+                        {!loading && fLead && (
+                            <div onClick={() => navigate('results')} style={{
+                                background: 'var(--green-dark)', border: '1px solid rgba(201,148,58,.15)',
+                                padding: 28, cursor: 'pointer', borderRadius: 2, transition: 'border-color .25s, transform .2s',
+                            }}>
+                                <div style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3, color: '#ff8aaa', marginBottom: 8, textTransform: 'uppercase' }}>Frauen – Führung</div>
+                                <div style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 22, color: 'var(--cream)', marginBottom: 4 }}>🥇 {fLead.teamName}</div>
+                                <div style={{ fontSize: 16, color: 'var(--cream-dark)', opacity: .8 }}>{fLead.totalPoints} Punkte</div>
+                                <div style={{ marginTop: 16, fontSize: 13, color: '#ff8aaa', opacity: .7, fontFamily: 'Cinzel, serif', letterSpacing: 1 }}>Vollständige Wertung →</div>
+                            </div>
+                        )}
 
                         <div onClick={() => navigate('matches')} style={{
                             background: 'var(--green-dark)', border: '1px solid rgba(201,148,58,.15)',
-                            padding: 28, cursor: 'pointer', transition: 'border-color .25s, transform .2s',
-                            borderRadius: 2,
+                            padding: 28, cursor: 'pointer', borderRadius: 2, transition: 'border-color .25s, transform .2s',
                         }}>
                             <div style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3, color: 'var(--gold)', marginBottom: 8, textTransform: 'uppercase' }}>Nächstes Spiel</div>
-                            {nextMatch && <>
-                                <div style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 20, color: 'var(--cream)', marginBottom: 4 }}>▶ Spiel {nextMatch.id}</div>
-                                <div style={{ fontSize: 16, color: 'var(--cream-dark)', opacity: .8 }}>{nextMatch.name} · {nextMatch.time} Uhr</div>
+                            {nextDisc && <>
+                                <div style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 20, color: 'var(--cream)', marginBottom: 4 }}>▶ Spiel {nextDisc.number}</div>
+                                <div style={{ fontSize: 16, color: 'var(--cream-dark)', opacity: .8 }}>{nextDisc.name}</div>
                             </>}
+                            {!nextDisc && !loading && (
+                                <div style={{ fontSize: 15, color: 'var(--cream-dark)', opacity: .5, fontStyle: 'italic' }}>Keine weiteren Spiele</div>
+                            )}
                             <div style={{ marginTop: 16, fontSize: 13, color: 'var(--gold)', opacity: .7, fontFamily: 'Cinzel, serif', letterSpacing: 1 }}>Alle Begegnungen →</div>
                         </div>
                     </div>
@@ -167,22 +177,22 @@ export function HomePage({ navigate }: HomePageProps) {
                             Die Wettkämpfe
                         </span>
                         <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)', marginBottom: 16 }}>
-                            5 Disziplinen
+                            {disciplines.length} Disziplinen
                         </h2>
                         <Separator />
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 2 }}>
-                        {DISCIPLINES.map(d => (
+                        {disciplines.map(d => (
                             <div key={d.id} onClick={() => navigate('disc-' + d.id)} style={{
                                 background: 'var(--green-dark)', border: '1px solid rgba(201,148,58,.15)',
                                 padding: '28px 22px', cursor: 'pointer',
                                 transition: 'border-color .25s, transform .2s', borderRadius: 2,
                             }}>
                                 <div style={{ fontSize: 32, marginBottom: 12 }}>{d.icon}</div>
-                                <div style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2, color: 'var(--gold)', marginBottom: 4 }}>Spiel {d.num}</div>
+                                <div style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2, color: 'var(--gold)', marginBottom: 4 }}>Spiel {d.number}</div>
                                 <div style={{ fontFamily: 'Cinzel, serif', fontSize: 14, fontWeight: 700, color: 'var(--cream)', marginBottom: 8 }}>{d.name}</div>
-                                <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--cream-dark)', opacity: .7 }}>{d.desc}</div>
+                                <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--cream-dark)', opacity: .7 }}>{d.description}</div>
                             </div>
                         ))}
                     </div>

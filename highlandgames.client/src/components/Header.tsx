@@ -12,7 +12,7 @@ export function Header({ navigate, currentPage }: HeaderProps) {
         { id: 'home', label: 'Start' },
         { id: 'results', label: 'Ergebnisse' },
         { id: 'matches', label: 'Begegnungen' },
-        { id: 'participants', label: 'Teilnehmer' },
+        { id: 'teams', label: 'Teams' },
         { id: 'admin', label: 'Admin' },
     ];
 

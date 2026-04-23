@@ -1,6 +1,10 @@
 import { useState, useCallback } from 'react';
 import { Header } from './components/Header';
 import { HomePage } from './pages/HomePage';
+import { ResultsPage } from './pages/ResultsPage';
+import { MatchesPage } from './pages/MatchesPage';
+import { TeamsPage } from './pages/TeamsPage';
+import { DisciplinePage } from './pages/DisciplinePage';
 
 function App() {
     const [page, setPage] = useState<string>(() => localStorage.getItem('hg_page') || 'home');
@@ -12,8 +16,12 @@ function App() {
     }, []);
 
     const renderPage = () => {
-        switch (page) {
+        if (page.startsWith('disc-')) return <DisciplinePage discId={page.replace('disc-', '')} navigate={navigate} />;
+        switch (page) {        
             case 'home': return <HomePage navigate={navigate} />;
+            case 'results': return <ResultsPage />;
+            case 'matches': return <MatchesPage navigate={navigate} />;
+            case 'teams': return <TeamsPage />;            
             default: return <HomePage navigate={navigate} />;
         }
     };
