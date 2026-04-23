@@ -20,6 +20,8 @@ public class Program
         builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
         builder.Services.AddScoped<ITeamRepository, TeamRepository>();
         builder.Services.AddScoped<ITeamService, TeamService>();
+        builder.Services.AddScoped<IDisciplineRepository, DisciplineRepository>();
+        builder.Services.AddScoped<IDisciplineService, DisciplineService>();
 
         builder.Services.AddCors(options =>
         {
