@@ -1,32 +1,43 @@
-namespace HighlandGames.Server
+using HighlandGames.Server.Data;
+using HighlandGames.Server.Hubs;
+using HighlandGames.Server.Repositories;
+using HighlandGames.Server.Services;
+using Microsoft.EntityFrameworkCore;
+
+namespace HighlandGames.Server;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        var builder = WebApplication.CreateBuilder(args);
+
+
+        builder.Services.AddControllers();
+        builder.Services.AddSignalR();
+        builder.Services.AddEndpointsApiExplorer();
+
+        builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Services.AddScoped<ITeamRepository, TeamRepository>();
+        builder.Services.AddScoped<ITeamService, TeamService>();
+
+        builder.Services.AddCors(options =>
         {
-            var builder = WebApplication.CreateBuilder(args);
+            options.AddDefaultPolicy(policy => policy.WithOrigins("https://localhost:5173").AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+        });
 
-            // Add services to the container.
+        var app = builder.Build();
 
-            builder.Services.AddControllers();
+        app.UseDefaultFiles();
+        app.MapStaticAssets();           
 
-            var app = builder.Build();
+        app.UseHttpsRedirection();
+        app.UseCors();
+        app.UseAuthorization();
+        app.MapControllers();
+        app.MapHub<ResultsHub>("/hubs/results");
+        app.MapFallbackToFile("/index.html");
 
-            app.UseDefaultFiles();
-            app.MapStaticAssets();
-
-            // Configure the HTTP request pipeline.
-
-            app.UseHttpsRedirection();
-
-            app.UseAuthorization();
-
-
-            app.MapControllers();
-
-            app.MapFallbackToFile("/index.html");
-
-            app.Run();
-        }
+        app.Run();
     }
 }
