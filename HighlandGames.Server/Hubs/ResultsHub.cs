@@ -4,5 +4,13 @@ namespace HighlandGames.Server.Hubs;
 
 public class ResultsHub : Hub
 {
-    // Clients erhalten Push-Updates wenn Ergebnisse sich ändern
+    public async Task JoinLeaderboard(string gender)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"leaderboard-{gender}");
+    }
+
+    public async Task JoinDiscipline(string disciplineId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"discipline-{disciplineId}");
+    }
 }

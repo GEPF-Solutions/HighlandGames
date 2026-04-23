@@ -22,6 +22,8 @@ public class Program
         builder.Services.AddScoped<ITeamService, TeamService>();
         builder.Services.AddScoped<IDisciplineRepository, DisciplineRepository>();
         builder.Services.AddScoped<IDisciplineService, DisciplineService>();
+        builder.Services.AddScoped<IResultRepository, ResultRepository>();
+        builder.Services.AddScoped<IResultService, ResultService>();
 
         builder.Services.AddCors(options =>
         {
