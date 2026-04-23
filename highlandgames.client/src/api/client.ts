@@ -1,8 +1,15 @@
 const BASE_URL = '/api';
 
+function getToken(): string | null {
+    return localStorage.getItem('hg_token');
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+    const token = getToken();
     const response = await fetch(`${BASE_URL}${path}`, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         ...options,
     });
 

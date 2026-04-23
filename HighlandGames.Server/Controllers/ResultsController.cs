@@ -1,5 +1,6 @@
 ﻿using HighlandGames.Server.DTOs;
 using HighlandGames.Server.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HighlandGames.Server.Controllers;
@@ -33,6 +34,7 @@ public class ResultsController(IResultService resultService) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> Upsert(UpsertResultDto dto)
     {
         var result = await resultService.UpsertAsync(dto);
@@ -40,6 +42,7 @@ public class ResultsController(IResultService resultService) : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> Delete(Guid id)
     {
         var success = await resultService.DeleteAsync(id);

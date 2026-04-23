@@ -5,6 +5,7 @@ import { ResultsPage } from './pages/ResultsPage';
 import { MatchesPage } from './pages/MatchesPage';
 import { TeamsPage } from './pages/TeamsPage';
 import { DisciplinePage } from './pages/DisciplinePage';
+import { AdminPage } from './pages/AdminPage';
 
 function App() {
     const [page, setPage] = useState<string>(() => localStorage.getItem('hg_page') || 'home');
@@ -22,6 +23,7 @@ function App() {
             case 'results': return <ResultsPage />;
             case 'matches': return <MatchesPage navigate={navigate} />;
             case 'teams': return <TeamsPage />;            
+            case 'admin': return <AdminPage />;
             default: return <HomePage navigate={navigate} />;
         }
     };

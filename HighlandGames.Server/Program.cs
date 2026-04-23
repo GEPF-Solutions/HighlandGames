@@ -2,7 +2,10 @@ using HighlandGames.Server.Data;
 using HighlandGames.Server.Hubs;
 using HighlandGames.Server.Repositories;
 using HighlandGames.Server.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace HighlandGames.Server;
 
@@ -25,13 +28,32 @@ public class Program
         builder.Services.AddScoped<IResultRepository, ResultRepository>();
         builder.Services.AddScoped<IResultService, ResultService>();
 
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                };
+            });
+
+        builder.Services.AddScoped<IAuthService, AuthService>();
+
         builder.Services.AddCors(options =>
         {
             options.AddDefaultPolicy(policy => policy.WithOrigins("https://localhost:5173").AllowAnyHeader().AllowAnyMethod().AllowCredentials());
         });
-
+       
         var app = builder.Build();
 
+        app.UseAuthentication();
         app.UseDefaultFiles();
         app.MapStaticAssets();           
 
