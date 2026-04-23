@@ -1,6 +1,7 @@
 ﻿using HighlandGames.Server.Data;
 using HighlandGames.Server.DTOs;
 using HighlandGames.Server.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HighlandGames.Server.Controllers;
@@ -22,6 +23,7 @@ public class TeamsController(ITeamService teamService) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> Create(CreateTeamDto dto)
     { 
         var team = await teamService.CreateAsync(dto);
@@ -29,6 +31,7 @@ public class TeamsController(ITeamService teamService) : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> Delete(Guid id)
     {
         var success = await teamService.DeleteAsync(id);

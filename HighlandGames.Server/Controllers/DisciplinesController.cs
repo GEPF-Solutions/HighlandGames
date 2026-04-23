@@ -1,5 +1,6 @@
 ﻿using HighlandGames.Server.DTOs;
 using HighlandGames.Server.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HighlandGames.Server.Controllers;
@@ -28,6 +29,7 @@ public class DisciplinesController(IDisciplineService disciplineService) : Contr
     }
 
     [HttpPut("{id}/status")]
+    [Authorize]
     public async Task<IActionResult> UpdateStatus(string id, UpdateDisciplineStatusDto dto)
     {
         var success = await disciplineService.UpdateStatusAsync(id, dto);
