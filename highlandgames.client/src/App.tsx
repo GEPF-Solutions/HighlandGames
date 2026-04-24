@@ -6,6 +6,7 @@ import { MatchesPage } from './pages/MatchesPage';
 import { TeamsPage } from './pages/TeamsPage';
 import { DisciplinePage } from './pages/DisciplinePage';
 import { AdminPage } from './pages/AdminPage';
+import { Footer } from './components/Footer';
 
 function App() {
     const [page, setPage] = useState<string>(() => localStorage.getItem('hg_page') || 'home');
@@ -29,12 +30,13 @@ function App() {
     };
 
     return (
-        <>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Header navigate={navigate} currentPage={page} />
-            <main style={{ paddingTop: 72 }}>
+            <main style={{ paddingTop: 72, flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {renderPage()}
             </main>
-        </>
+            <Footer />
+        </div>
     );
 }
 
