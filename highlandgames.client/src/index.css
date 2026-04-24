@@ -19,15 +19,21 @@
     padding: 0;
 }
 
-html {
-    scroll-behavior: smooth;
+html, body {
+    height: 100%;
+    margin: 0;
 }
 
 body {
     font-family: 'EB Garamond', Georgia, serif;
     background: var(--green-dark);
     color: var(--cream);
-    min-height: 100vh;
+}
+
+#root {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .tartan {

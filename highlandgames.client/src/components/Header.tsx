@@ -26,14 +26,8 @@ export function Header({ navigate, currentPage }: HeaderProps) {
             borderBottom: '1px solid rgba(201,148,58,.3)',
         }}>
             <div onClick={() => navigate('home')} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                <div style={{
-                    width: 40, height: 40, borderRadius: '50%',
-                    border: '2px solid var(--gold)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: 11,
-                    color: 'var(--gold)', background: 'var(--green-dark)', letterSpacing: 1,
-                }}>PW</div>
-                <span style={{ fontFamily: 'Cinzel, serif', fontSize: 12, letterSpacing: 2, color: 'var(--cream-dark)', textTransform: 'uppercase' }}>
+                <img src="/PWLogo.png" alt="Pro Western Logo" style={{ width: 44, height: 44, objectFit: 'contain' }} />
+                <span style={{ fontFamily: 'Cinzel, serif', fontSize: 16, letterSpacing: 2, color: 'var(--cream-dark)', textTransform: 'uppercase' }}>
                     Highland Games
                 </span>
             </div>
@@ -41,7 +35,7 @@ export function Header({ navigate, currentPage }: HeaderProps) {
             <nav style={{ display: 'flex', gap: 28 }}>
                 {navLinks.map(l => (
                     <button key={l.id} onClick={() => navigate(l.id)} style={{
-                        fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2,
+                        fontFamily: 'Cinzel, serif', fontSize: 14, letterSpacing: 2,
                         textTransform: 'uppercase', background: 'none', border: 'none',
                         color: currentPage === l.id ? 'var(--gold)' : 'var(--cream-dark)',
                         cursor: 'pointer', transition: 'color .2s',
