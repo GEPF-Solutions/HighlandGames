@@ -1,10 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { useHomePage } from '../hooks/useHomePage';
 
-interface HomePageProps {
-    navigate: (page: string) => void;
-}
-
-export function HomePage({ navigate }: HomePageProps) {
+export function HomePage() {
+    const navigate = useNavigate();
     const { liveDisc } = useHomePage();
 
     return (
@@ -25,7 +23,7 @@ export function HomePage({ navigate }: HomePageProps) {
                     <span style={{ fontFamily: 'Cinzel, serif', fontSize: 14, color: 'var(--cream)' }}>
                         Spiel {liveDisc.number}: {liveDisc.name}
                     </span>
-                    <button onClick={() => navigate('disc-' + liveDisc.id)} style={{
+                    <button onClick={() => navigate('/discipline/' + liveDisc.id)} style={{
                         marginLeft: 'auto', fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2,
                         textTransform: 'uppercase', padding: '6px 16px', borderRadius: 2,
                         cursor: 'pointer', background: 'transparent', color: 'var(--cream)',
@@ -89,7 +87,7 @@ export function HomePage({ navigate }: HomePageProps) {
                     </p>
 
                     <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button onClick={() => navigate('results')} style={{
+                        <button onClick={() => navigate('/results')} style={{
                             fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2,
                             textTransform: 'uppercase', padding: '14px 32px', borderRadius: 2,
                             cursor: 'pointer', border: 'none',
@@ -98,7 +96,7 @@ export function HomePage({ navigate }: HomePageProps) {
                         }}>
                             Zu den Ergebnissen
                         </button>
-                        <button onClick={() => navigate('matches')} style={{
+                        <button onClick={() => navigate('/matches')} style={{
                             fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2,
                             textTransform: 'uppercase', padding: '14px 32px', borderRadius: 2,
                             cursor: 'pointer', background: 'transparent', color: 'var(--cream)',

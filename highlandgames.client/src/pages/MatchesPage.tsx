@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { DisciplineDto } from '../api/types';
 import { disciplinesApi } from '../api/disciplinesApi';
 import { Separator } from '../components/Separator';
-
-interface MatchesPageProps {
-    navigate: (page: string) => void;
-}
 
 const statusLabel: Record<string, string> = {
     done: 'Abgeschlossen',
@@ -21,7 +18,8 @@ const statusStyle: Record<string, { background: string; color: string; border: s
     upcoming: { background: 'rgba(240,230,204,.06)', color: 'var(--cream-dark)', border: '1px solid rgba(240,230,204,.15)' },
 };
 
-export function MatchesPage({ navigate }: MatchesPageProps) {
+export function MatchesPage() {
+    const navigate = useNavigate();
     const [disciplines, setDisciplines] = useState<DisciplineDto[]>([]);
 
     useEffect(() => {
@@ -42,7 +40,7 @@ export function MatchesPage({ navigate }: MatchesPageProps) {
                 {disciplines.map(d => {
                     const style = statusStyle[d.status] ?? statusStyle.upcoming;
                     return (
-                        <div key={d.id} onClick={() => navigate('disc-' + d.id)} style={{
+                        <div key={d.id} onClick={() => navigate('/discipline/' + d.id)} style={{
                             display: 'flex', alignItems: 'center', gap: 16,
                             padding: '16px 20px', borderBottom: '1px solid rgba(240,230,204,.07)',
                             cursor: 'pointer', transition: 'background .15s',
