@@ -72,3 +72,11 @@ body {
 .page-enter {
     animation: pageIn .3s ease both;
 }
+
+@media (max-width: 640px) {
+    .tabs-desktop { display: none !important; }
+}
+
+@media (min-width: 641px) {
+    .tabs-mobile { display: none !important; }
+}
