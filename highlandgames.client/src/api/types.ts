@@ -48,6 +48,7 @@ export interface UpsertResultDto {
 export interface MatchDto {
     id: string;
     disciplineId: string;
+    gender: Gender;
     teamAId: string;
     teamAName: string;
     teamBId: string;

@@ -12,9 +12,10 @@ public class MatchService(IMatchRepository matchRepository, ITeamRepository team
     public async Task<IEnumerable<MatchDto>> GetAllAsync(string? disciplineId, string? gender)
     {
         return (await matchRepository.GetAllAsync(disciplineId, gender)).Select(m => new MatchDto(
-            m.Id, 
-            m.DisciplineId, 
-            m.TeamAId, 
+            m.Id,
+            m.DisciplineId,
+            m.TeamA?.Gender ?? m.TeamB?.Gender ?? string.Empty,
+            m.TeamAId,
             m.TeamA?.Name ?? string.Empty,
             m.TeamBId,
             m.TeamB?.Name ?? string.Empty,
@@ -56,6 +57,7 @@ public class MatchService(IMatchRepository matchRepository, ITeamRepository team
         return (await matchRepository.GetAllAsync(dto.DisciplineId, dto.Gender)).Select(m => new MatchDto(
             m.Id,
             m.DisciplineId,
+            m.TeamA?.Gender ?? m.TeamB?.Gender ?? string.Empty,
             m.TeamAId,
             m.TeamA?.Name ?? string.Empty,
             m.TeamBId,
@@ -98,6 +100,7 @@ public class MatchService(IMatchRepository matchRepository, ITeamRepository team
         return new MatchDto(
             updated.Id,
             updated.DisciplineId,
+            updated.TeamA?.Gender ?? updated.TeamB?.Gender ?? string.Empty,
             updated.TeamAId,
             updated.TeamA?.Name ?? string.Empty,
             updated.TeamBId,
