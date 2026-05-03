@@ -148,8 +148,8 @@ export function DisciplinePage() {
     const fResults = results.filter(r => r.gender === 'f').sort((a, b) => b.points - a.points);
 
     const genders = [
-        { label: 'Männer', color: '#7aadff', results: mResults, matches: matchesM },
-        { label: 'Frauen', color: '#ff8aaa', results: fResults, matches: matchesF },
+        { label: '♂ Männer', color: '#7aadff', results: mResults, matches: matchesM },
+        { label: '♀ Frauen', color: '#ff8aaa', results: fResults, matches: matchesF },
     ];
 
     return (
