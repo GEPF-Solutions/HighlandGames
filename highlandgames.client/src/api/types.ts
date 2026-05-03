@@ -20,6 +20,7 @@ export interface ResultDto {
     id: string;
     teamId: string;
     teamName: string;
+    gender: Gender;
     disciplineId: string;
     points: number;
     rawValue?: string;
