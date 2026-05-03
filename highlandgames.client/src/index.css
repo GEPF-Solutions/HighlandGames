@@ -77,8 +77,16 @@ body {
     .tabs-desktop { display: none !important; }
 }
 
+.results-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    width: 100%;
+}
+
 @media (min-width: 641px) {
     .tabs-mobile { display: none !important; }
+    .results-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 767px) {

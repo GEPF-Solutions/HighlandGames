@@ -33,7 +33,7 @@ const empty = (
     </div>
 );
 
-function LeaderboardTable({ entries }: { entries: LeaderboardEntryDto[] }) {
+function LeaderboardTable({ entries, color }: { entries: LeaderboardEntryDto[]; color: string }) {
     if (entries.length === 0) return empty;
     return (
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
@@ -49,7 +49,7 @@ function LeaderboardTable({ entries }: { entries: LeaderboardEntryDto[] }) {
                     <tr key={entry.teamId} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
                         <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: rankColor(i) }}>{rankMedal(i)}</td>
                         <td style={{ ...tdStyle, color: 'var(--cream)' }}>{entry.teamName}</td>
-                        <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', fontWeight: 700, color: 'var(--cream-dark)' }}>{entry.totalPoints}</td>
+                        <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', fontWeight: 700, color }}>{entry.totalPoints}</td>
                     </tr>
                 ))}
             </tbody>
@@ -59,6 +59,7 @@ function LeaderboardTable({ entries }: { entries: LeaderboardEntryDto[] }) {
 
 function DiscResultTable({ results, color }: { results: ResultDto[]; color: string }) {
     if (results.length === 0) return empty;
+    const hasRawValues = results.some(r => r.rawValue != null);
     return (
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
             <thead style={{ background: 'var(--green-dark)' }}>
@@ -66,7 +67,7 @@ function DiscResultTable({ results, color }: { results: ResultDto[]; color: stri
                     <th style={thNarrow}>#</th>
                     <th style={thStyle}>Team</th>
                     <th style={thNarrow}>Punkte</th>
-                    <th style={thNarrow}>Wert</th>
+                    {hasRawValues && <th style={thNarrow}>Messwert</th>}
                 </tr>
             </thead>
             <tbody>
@@ -75,7 +76,7 @@ function DiscResultTable({ results, color }: { results: ResultDto[]; color: stri
                         <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: rankColor(i) }}>{rankMedal(i)}</td>
                         <td style={{ ...tdStyle, color: 'var(--cream)' }}>{r.teamName}</td>
                         <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', fontWeight: 700, color }}>{r.points}</td>
-                        <td style={{ ...tdNarrow, color: 'var(--cream-dark)', opacity: .7, fontStyle: 'italic' }}>{r.rawValue ?? '–'}</td>
+                        {hasRawValues && <td style={{ ...tdNarrow, fontStyle: 'italic', color: 'var(--cream-dark)', opacity: .7 }}>{r.rawValue ?? '—'}</td>}
                     </tr>
                 ))}
             </tbody>
@@ -141,9 +142,9 @@ export function ResultsPage() {
                     Laden...
                 </div>
             ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+                <div className="results-grid">
                     {genders.map(({ label, color }, gi) => (
-                        <div key={label} style={{ flex: '1 1 300px', minWidth: 0, overflow: 'hidden' }}>
+                        <div key={label} style={{ minWidth: 0 }}>
                             <div style={{
                                 fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3,
                                 textTransform: 'uppercase', color, marginBottom: 12,
@@ -152,7 +153,7 @@ export function ResultsPage() {
                             </div>
                             <div style={{ display: 'block', width: '100%', border: '1px solid rgba(201,148,58,.2)', overflowX: 'auto' }}>
                                 {activeTab === 'total'
-                                    ? <LeaderboardTable entries={gi === 0 ? mLeaderboard : fLeaderboard} />
+                                    ? <LeaderboardTable entries={gi === 0 ? mLeaderboard : fLeaderboard} color={color} />
                                     : <DiscResultTable results={gi === 0 ? mDiscResults : fDiscResults} color={color} />
                                 }
                             </div>
