@@ -21,7 +21,7 @@ export function LiveBanner() {
             <span style={{ fontFamily: 'Cinzel, serif', fontSize: 14, color: 'var(--cream)' }}>
                 Spiel {liveDisc.number}: {liveDisc.name}
             </span>
-            <button onClick={() => navigate('/discipline/' + liveDisc.id)} style={{
+            <button onClick={() => navigate('/disciplines/' + liveDisc.id)} style={{
                 marginLeft: 'auto', fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2,
                 textTransform: 'uppercase', padding: '6px 16px', borderRadius: 2,
                 cursor: 'pointer', background: 'transparent', color: 'var(--cream)',

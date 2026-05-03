@@ -19,10 +19,10 @@ function MainLayout() {
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/results" element={<ResultsPage />} />
-                    <Route path="/matches" element={<MatchesPage />} />
+                    <Route path="/disciplines" element={<MatchesPage />} />
+                    <Route path="/disciplines/:id" element={<DisciplinePage />} />
                     <Route path="/teams" element={<TeamsPage />} />
                     <Route path="/admin" element={<AdminPage />} />
-                    <Route path="/discipline/:id" element={<DisciplinePage />} />
                 </Routes>
             </main>
             <Footer />
