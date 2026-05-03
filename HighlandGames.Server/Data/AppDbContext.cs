@@ -19,7 +19,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             new Discipline { Id = "weight", Number = 2, Name = "Gewichtlauf", Icon = "🏋️" },
             new Discipline { Id = "caber", Number = 3, Name = "Baumstammwerfen", Icon = "🪵" },
             new Discipline { Id = "rope", Number = 4, Name = "Seilziehen", Icon = "💪" },
-            new Discipline { Id = "fire", Number = 5, Name = "Dustlöschen", Icon = "🔥" }
+            new Discipline { Id = "fire", Number = 5, Name = "Durstlöschen", Icon = "🔥" }
         );
     }
 }
