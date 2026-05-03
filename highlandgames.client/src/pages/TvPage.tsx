@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import { useHomePage } from '../hooks/useHomePage';
 import { Footer } from '../components/Footer';
 import type { LeaderboardEntryDto } from '../api/types';
@@ -146,10 +147,45 @@ function LeaderboardColumn({ label, accentColor, entries, shimmerIds }: ColumnPr
     );
 }
 
+function useAllDoneConfetti(disciplines: { status: string }[]) {
+    const fired = useRef(false);
+
+    useEffect(() => {
+        if (fired.current || disciplines.length === 0) return;
+        if (!disciplines.every(d => d.status === 'done')) return;
+
+        fired.current = true;
+
+        const colors = ['#c9943a', '#e8b85a', '#f0e6cc', '#2d6b47', '#7dc49e'];
+
+        const end = Date.now() + 30000;
+        let tick = 0;
+        const frame = () => {
+            tick++;
+            if (tick % 5 === 0) {
+                confetti({
+                    particleCount: 1,
+                    startVelocity: 6,
+                    spread: 360,
+                    origin: { x: Math.random(), y: 0 },
+                    colors,
+                    ticks: 1400,
+                    gravity: 0.35,
+                    scalar: 1.1,
+                    drift: (Math.random() - 0.5) * 0.3,
+                });
+            }
+            if (Date.now() < end) requestAnimationFrame(frame);
+        };
+        requestAnimationFrame(frame);
+    }, [disciplines]);
+}
+
 export function TvPage() {
-    const { mLeaderboard, fLeaderboard, liveDisc, nextDisc } = useHomePage();
+    const { mLeaderboard, fLeaderboard, liveDisc, nextDisc, disciplines } = useHomePage();
     const mShimmer = useShimmer(mLeaderboard);
     const fShimmer = useShimmer(fLeaderboard);
+    useAllDoneConfetti(disciplines);
 
     return (
         <div style={{
