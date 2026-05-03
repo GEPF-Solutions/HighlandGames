@@ -4,27 +4,23 @@ import { disciplinesApi } from '../api/disciplinesApi';
 import { useSignalR } from './useSignalR';
 
 export function useLiveDisc() {
-    const [liveDisc, setLiveDisc] = useState<DisciplineDto | null>(null);
+    const [disciplines, setDisciplines] = useState<DisciplineDto[]>([]);
     const { on, off } = useSignalR();
 
     useEffect(() => {
-        disciplinesApi.getAll().then(discs => {
-            setLiveDisc(discs.find(d => d.status === 'live') ?? null);
-        });
+        disciplinesApi.getAll().then(setDisciplines);
     }, []);
 
     useEffect(() => {
         on('DisciplineStatusChanged', (data: unknown) => {
-            const disc = data as DisciplineDto;
-            if (disc.status === 'live') {
-                setLiveDisc(disc);
-            } else {
-                setLiveDisc(prev => prev?.id === disc.id ? null : prev);
-            }
+            const updated = data as DisciplineDto;
+            setDisciplines(prev => prev.map(d => d.id === updated.id ? updated : d));
         });
-
-        return () => { off('DisciplineStatusChanged'); };
+        return () => off('DisciplineStatusChanged');
     }, []);
 
-    return liveDisc;
+    return {
+        liveDisc: disciplines.find(d => d.status === 'live') ?? null,
+        nextDisc: disciplines.find(d => d.status === 'next') ?? null,
+    };
 }
