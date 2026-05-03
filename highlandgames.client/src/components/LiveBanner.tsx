@@ -3,7 +3,7 @@ import { useLiveDisc } from '../hooks/useLiveDisc';
 
 export function LiveBanner() {
     const navigate = useNavigate();
-    const liveDisc = useLiveDisc();
+    const { liveDisc } = useLiveDisc();
 
     if (!liveDisc) return null;
 
