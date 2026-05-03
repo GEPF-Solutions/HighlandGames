@@ -87,10 +87,7 @@ ASP.NET Core maps env vars to config using `__` as the section separator — no 
 
 ## Database
 
-Default connection string in `appsettings.json`:  
-`Host=localhost;Port=5432;Database=highland_games;Username=highland;Password=changeme`  
-Override via `ConnectionStrings__DefaultConnection` env var.
-
+Connection string is configured via the `ConnectionStrings__DefaultConnection` env var.  
 Run locally via Docker Compose: `docker-compose up -d`  
 Apply migrations: `dotnet ef database update` inside `HighlandGames.Server/`
 
