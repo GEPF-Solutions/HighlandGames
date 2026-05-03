@@ -37,7 +37,7 @@ function useShimmer(leaderboard: LeaderboardEntryDto[]) {
 function AnimatedScore({ value, color }: { value: number; color: string }) {
     const [display, setDisplay] = useState(value);
     const prevValue = useRef(value);
-    const raf = useRef<number>();
+    const raf = useRef<number | undefined>(undefined);
 
     useEffect(() => {
         if (prevValue.current === value) return;

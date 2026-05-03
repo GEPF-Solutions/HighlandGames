@@ -15,7 +15,7 @@ const tdStyle: React.CSSProperties = {
     borderBottom: '1px solid rgba(240,230,204,.07)',
 };
 
-function TeamTable({ teams, color }: { teams: TeamDto[]; color: string }) {
+function TeamTable({ teams }: { teams: TeamDto[] }) {
     if (teams.length === 0) {
         return (
             <div style={{ padding: '40px 20px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2, color: 'var(--cream-dark)', opacity: .4 }}>
@@ -69,7 +69,7 @@ export function TeamsPage() {
                             {label}
                         </div>
                         <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
-                            <TeamTable teams={teams} color={color} />
+                            <TeamTable teams={teams} />
                         </div>
                         <div style={{ marginTop: 8, fontSize: 13, color: 'var(--cream-dark)', opacity: .4, textAlign: 'right', fontStyle: 'italic' }}>
                             {teams.length} Teams

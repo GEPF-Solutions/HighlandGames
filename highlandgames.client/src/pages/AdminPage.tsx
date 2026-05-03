@@ -60,7 +60,7 @@ export function AdminPage() {
 
     const handleStatusChange = async (id: string, status: string) => {
         await disciplinesApi.updateStatus(id, status);
-        setDisciplines(prev => prev.map(d => d.id === id ? { ...d, status } : d));
+        setDisciplines(prev => prev.map(d => d.id === id ? { ...d, status: status as DisciplineDto['status'] } : d));
     };
 
     const handleLoadMatches = async () => {
