@@ -3,14 +3,13 @@ import type { DisciplineDto, LeaderboardEntryDto, ResultDto } from '../api/types
 import { disciplinesApi } from '../api/disciplinesApi';
 import { resultsApi } from '../api/resultsApi';
 import { useSignalR } from './useSignalR';
-import type { Gender } from '../api/types';
 
 export function useResultsPage() {
     const [disciplines, setDisciplines] = useState<DisciplineDto[]>([]);
-    const [gender, setGender] = useState<Gender>('m');
     const [activeTab, setActiveTab] = useState<string>('total');
-    const [leaderboard, setLeaderboard] = useState<LeaderboardEntryDto[]>([]);
-    const [discResults, setDiscResults] = useState<ResultDto[]>([]);
+    const [mLeaderboard, setMLeaderboard] = useState<LeaderboardEntryDto[]>([]);
+    const [fLeaderboard, setFLeaderboard] = useState<LeaderboardEntryDto[]>([]);
+    const [allDiscResults, setAllDiscResults] = useState<ResultDto[]>([]);
     const [loading, setLoading] = useState(true);
     const { on, off, joinGroup } = useSignalR();
 
@@ -23,11 +22,15 @@ export function useResultsPage() {
             setLoading(true);
             try {
                 if (activeTab === 'total') {
-                    const data = await resultsApi.getLeaderboard(gender);
-                    setLeaderboard(data);
+                    const [m, f] = await Promise.all([
+                        resultsApi.getLeaderboard('m'),
+                        resultsApi.getLeaderboard('f'),
+                    ]);
+                    setMLeaderboard(m);
+                    setFLeaderboard(f);
                 } else {
                     const data = await resultsApi.getByDiscipline(activeTab);
-                    setDiscResults(data);
+                    setAllDiscResults(data);
                 }
             } finally {
                 setLoading(false);
@@ -35,18 +38,21 @@ export function useResultsPage() {
         };
 
         fetchResults();
-    }, [gender, activeTab]);
+    }, [activeTab]);
 
     useEffect(() => {
-        joinGroup('JoinLeaderboard', gender);
+        joinGroup('JoinLeaderboard', 'm');
+        joinGroup('JoinLeaderboard', 'f');
 
         on('LeaderboardUpdated', (data: unknown) => {
-            setLeaderboard(data as LeaderboardEntryDto[]);
+            const leaderboard = data as LeaderboardEntryDto[];
+            if (leaderboard[0]?.gender === 'm') setMLeaderboard(leaderboard);
+            else setFLeaderboard(leaderboard);
         });
 
         on('ResultUpdated', (data: unknown) => {
             const result = data as ResultDto;
-            setDiscResults(prev => {
+            setAllDiscResults(prev => {
                 const idx = prev.findIndex(r => r.id === result.id);
                 if (idx >= 0) {
                     const updated = [...prev];
@@ -61,7 +67,10 @@ export function useResultsPage() {
             off('LeaderboardUpdated');
             off('ResultUpdated');
         };
-    }, [gender]);
+    }, []);
 
-    return { disciplines, gender, setGender, activeTab, setActiveTab, leaderboard, discResults, loading };
+    const mDiscResults = allDiscResults.filter(r => r.gender === 'm').sort((a, b) => b.points - a.points);
+    const fDiscResults = allDiscResults.filter(r => r.gender === 'f').sort((a, b) => b.points - a.points);
+
+    return { disciplines, activeTab, setActiveTab, mLeaderboard, fLeaderboard, mDiscResults, fDiscResults, loading };
 }

@@ -28,10 +28,14 @@ const thStyle: React.CSSProperties = {
     borderBottom: '1px solid rgba(201,148,58,.25)',
 };
 
+const thNarrow: React.CSSProperties = { ...thStyle, whiteSpace: 'nowrap', textAlign: 'center' };
+
 const tdStyle: React.CSSProperties = {
     padding: '12px 18px',
     borderBottom: '1px solid rgba(240,230,204,.07)',
 };
+
+const tdNarrow: React.CSSProperties = { ...tdStyle, whiteSpace: 'nowrap', textAlign: 'center' };
 
 const emptyStyle: React.CSSProperties = {
     padding: '40px 20px', textAlign: 'center',
@@ -40,12 +44,7 @@ const emptyStyle: React.CSSProperties = {
     border: '1px dashed rgba(201,148,58,.2)',
 };
 
-const rankMedal = (i: number) => {
-    if (i === 0) return '🥇';
-    if (i === 1) return '🥈';
-    if (i === 2) return '🥉';
-    return String(i + 1);
-};
+const rankMedal = (i: number) => String(i + 1);
 
 const rankColor = (i: number) =>
     i === 0 ? '#f0c040' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : 'var(--cream-dark)';
@@ -97,16 +96,19 @@ export function DisciplinePage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
                 <thead style={{ background: 'var(--green-dark)' }}>
                     <tr>
-                        {['#', 'Team', 'Punkte', 'Wert'].map(h => <th key={h} style={thStyle}>{h}</th>)}
+                        <th style={thNarrow}>#</th>
+                        <th style={thStyle}>Team</th>
+                        <th style={thNarrow}>Punkte</th>
+                        <th style={thNarrow}>Wert</th>
                     </tr>
                 </thead>
                 <tbody>
                     {genderResults.map((r, i) => (
                         <tr key={r.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
-                            <td style={{ ...tdStyle, fontFamily: 'Cinzel, serif', color: rankColor(i) }}>{rankMedal(i)}</td>
+                            <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: rankColor(i) }}>{rankMedal(i)}</td>
                             <td style={{ ...tdStyle, color: 'var(--cream)' }}>{r.teamName}</td>
-                            <td style={{ ...tdStyle, color, fontFamily: 'Cinzel, serif', fontWeight: 700 }}>{r.points}</td>
-                            <td style={{ ...tdStyle, color: 'var(--cream-dark)', opacity: .7, fontStyle: 'italic' }}>{r.rawValue ?? '–'}</td>
+                            <td style={{ ...tdNarrow, color, fontFamily: 'Cinzel, serif', fontWeight: 700 }}>{r.points}</td>
+                            <td style={{ ...tdNarrow, color: 'var(--cream-dark)', opacity: .7, fontStyle: 'italic' }}>{r.rawValue ?? '–'}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -118,16 +120,19 @@ export function DisciplinePage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
                 <thead style={{ background: 'var(--green-dark)' }}>
                     <tr>
-                        {['Team A', 'Score', 'Team B', 'Sieger'].map(h => <th key={h} style={thStyle}>{h}</th>)}
+                        <th style={thStyle}>Team A</th>
+                        <th style={thNarrow}>Score</th>
+                        <th style={thStyle}>Team B</th>
+                        <th style={thNarrow}>Sieger</th>
                     </tr>
                 </thead>
                 <tbody>
                     {matchList.map((m, i) => (
                         <tr key={m.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
                             <td style={{ ...tdStyle, color: m.winnerTeamId === m.teamAId ? 'var(--gold)' : 'var(--cream)' }}>{m.teamAName}</td>
-                            <td style={{ ...tdStyle, fontFamily: 'Cinzel, serif', color: 'var(--cream-dark)' }}>{m.teamAScore ?? '–'} : {m.teamBScore ?? '–'}</td>
+                            <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: 'var(--cream-dark)' }}>{m.teamAScore ?? '–'} : {m.teamBScore ?? '–'}</td>
                             <td style={{ ...tdStyle, color: m.winnerTeamId === m.teamBId ? 'var(--gold)' : 'var(--cream)' }}>{m.teamBName}</td>
-                            <td style={{ ...tdStyle, color: '#7dc49e', fontFamily: 'Cinzel, serif', fontSize: 12 }}>
+                            <td style={{ ...tdNarrow, color: '#7dc49e', fontFamily: 'Cinzel, serif', fontSize: 12 }}>
                                 {m.winnerTeamId ? (m.winnerTeamId === m.teamAId ? m.teamAName : m.teamBName) : '–'}
                             </td>
                         </tr>
@@ -181,11 +186,11 @@ export function DisciplinePage() {
 
             {/* Begegnungen */}
             <div style={{ fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 3, color: 'var(--gold)', marginBottom: 16, textTransform: 'uppercase' }}>Begegnungen</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 48 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginBottom: 48 }}>
                 {genders.map(({ label, color, matches }) => (
-                    <div key={label}>
+                    <div key={label} style={{ flex: '1 1 300px', minWidth: 0, overflow: 'hidden' }}>
                         <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, color, marginBottom: 12, textTransform: 'uppercase' }}>{label}</div>
-                        <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
+                        <div style={{ display: 'block', width: '100%', border: '1px solid rgba(201,148,58,.2)', overflowX: 'auto' }}>
                             {renderMatches(matches)}
                         </div>
                     </div>
@@ -194,11 +199,11 @@ export function DisciplinePage() {
 
             {/* Ergebnisse */}
             <div style={{ fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 3, color: 'var(--gold)', marginBottom: 16, textTransform: 'uppercase' }}>Ergebnisse</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
                 {genders.map(({ label, color, results: res }) => (
-                    <div key={label}>
+                    <div key={label} style={{ flex: '1 1 300px', minWidth: 0, overflow: 'hidden' }}>
                         <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, color, marginBottom: 12, textTransform: 'uppercase' }}>{label}</div>
-                        <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
+                        <div style={{ display: 'block', width: '100%', border: '1px solid rgba(201,148,58,.2)', overflowX: 'auto' }}>
                             {renderResults(res, color)}
                         </div>
                     </div>
