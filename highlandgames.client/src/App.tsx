@@ -6,9 +6,11 @@ import { MatchesPage } from './pages/MatchesPage';
 import { TeamsPage } from './pages/TeamsPage';
 import { DisciplinePage } from './pages/DisciplinePage';
 import { AdminPage } from './pages/AdminPage';
+import { TvPage } from './pages/TvPage';
 import { Footer } from './components/Footer';
 
 function App() {
+    if (window.location.pathname === '/tv') return <TvPage />;
     const [page, setPage] = useState<string>(() => localStorage.getItem('hg_page') || 'home');
 
     const navigate = useCallback((p: string) => {
