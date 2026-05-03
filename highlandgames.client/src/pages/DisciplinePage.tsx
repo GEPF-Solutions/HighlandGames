@@ -1,15 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import type { DisciplineDto, ResultDto, MatchDto } from '../api/types';
 import { disciplinesApi } from '../api/disciplinesApi';
 import { resultsApi } from '../api/resultsApi';
 import { getMatches } from '../api/matches';
 import { Separator } from '../components/Separator';
 import { useSignalR } from '../hooks/useSignalR';
-
-interface DisciplinePageProps {
-    discId: string;
-    navigate: (page: string) => void;
-}
 
 const statusLabel: Record<string, string> = {
     done: 'Abgeschlossen',
@@ -54,7 +50,9 @@ const rankMedal = (i: number) => {
 const rankColor = (i: number) =>
     i === 0 ? '#f0c040' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : 'var(--cream-dark)';
 
-export function DisciplinePage({ discId, navigate }: DisciplinePageProps) {
+export function DisciplinePage() {
+    const { id: discId = '' } = useParams();
+    const navigate = useNavigate();
     const [discipline, setDiscipline] = useState<DisciplineDto | null>(null);
     const [results, setResults] = useState<ResultDto[]>([]);
     const [matchesM, setMatchesM] = useState<MatchDto[]>([]);
@@ -151,7 +149,7 @@ export function DisciplinePage({ discId, navigate }: DisciplinePageProps) {
 
     return (
         <div className="page-enter" style={{ padding: '60px 40px', maxWidth: 1000, margin: '0 auto' }}>
-            <button onClick={() => navigate('matches')} style={{
+            <button onClick={() => navigate('/matches')} style={{
                 background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer',
                 fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2, marginBottom: 24, padding: 0,
             }}>
