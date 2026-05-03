@@ -1,5 +1,6 @@
 ﻿using HighlandGames.Server.DTOs;
-using HighlandGames.Server.Repositories;
+using HighlandGames.Server.Repositories.Abstractions;
+using HighlandGames.Server.Services.Abstractions;
 
 namespace HighlandGames.Server.Services;
 

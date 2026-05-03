@@ -1,7 +1,8 @@
 ﻿using HighlandGames.Server.DTOs;
 using HighlandGames.Server.Hubs;
 using HighlandGames.Server.Models;
-using HighlandGames.Server.Repositories;
+using HighlandGames.Server.Repositories.Abstractions;
+using HighlandGames.Server.Services.Abstractions;
 using Microsoft.AspNetCore.SignalR;
 
 namespace HighlandGames.Server.Services;

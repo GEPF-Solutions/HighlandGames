@@ -1,6 +1,6 @@
 ﻿using HighlandGames.Server.Models;
 
-namespace HighlandGames.Server.Repositories;
+namespace HighlandGames.Server.Repositories.Abstractions;
 
 public interface IResultRepository
 {

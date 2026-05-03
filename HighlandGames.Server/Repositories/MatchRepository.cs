@@ -1,5 +1,6 @@
 ﻿using HighlandGames.Server.Data;
 using HighlandGames.Server.Models;
+using HighlandGames.Server.Repositories.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
 namespace HighlandGames.Server.Repositories;

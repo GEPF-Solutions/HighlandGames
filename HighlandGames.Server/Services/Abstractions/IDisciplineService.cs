@@ -1,6 +1,6 @@
 ﻿using HighlandGames.Server.DTOs;
 
-namespace HighlandGames.Server.Services;
+namespace HighlandGames.Server.Services.Abstractions;
 
 public interface IDisciplineService
 {
