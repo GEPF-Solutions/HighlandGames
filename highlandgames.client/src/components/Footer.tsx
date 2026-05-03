@@ -6,7 +6,6 @@ export function Footer() {
             borderTop: '1px solid rgba(201,148,58,.2)',
         }}>
             <div style={{
-                maxWidth: 1100, margin: '0 auto',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 flexWrap: 'wrap', gap: 16,
                 fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 1,
