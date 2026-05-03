@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { Header } from './components/Header';
+import { Footer } from './components/Footer';
 import { LiveBanner } from './components/LiveBanner';
 import { HomePage } from './pages/HomePage';
 import { ResultsPage } from './pages/ResultsPage';
@@ -8,30 +9,8 @@ import { TeamsPage } from './pages/TeamsPage';
 import { DisciplinePage } from './pages/DisciplinePage';
 import { AdminPage } from './pages/AdminPage';
 import { TvPage } from './pages/TvPage';
-import { Footer } from './components/Footer';
 
-function App() {
-    if (window.location.pathname === '/tv') return <TvPage />;
-    const [page, setPage] = useState<string>(() => localStorage.getItem('hg_page') || 'home');
-
-    const navigate = useCallback((p: string) => {
-        setPage(p);
-        localStorage.setItem('hg_page', p);
-        window.scrollTo(0, 0);
-    }, []);
-
-    const renderPage = () => {
-        if (page.startsWith('disc-')) return <DisciplinePage discId={page.replace('disc-', '')} navigate={navigate} />;
-        switch (page) {        
-            case 'home': return <HomePage navigate={navigate} />;
-            case 'results': return <ResultsPage />;
-            case 'matches': return <MatchesPage navigate={navigate} />;
-            case 'teams': return <TeamsPage />;            
-            case 'admin': return <AdminPage />;
-            default: return <HomePage navigate={navigate} />;
-        }
-    };
-
+function MainLayout() {
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Header />
@@ -48,6 +27,15 @@ function App() {
             </main>
             <Footer />
         </div>
+    );
+}
+
+function App() {
+    return (
+        <Routes>
+            <Route path="/tv" element={<TvPage />} />
+            <Route path="/*" element={<MainLayout />} />
+        </Routes>
     );
 }
 
