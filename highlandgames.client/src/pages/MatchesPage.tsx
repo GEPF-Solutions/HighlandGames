@@ -1,12 +1,10 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { DisciplineDto } from '../api/types';
-import { disciplinesApi } from '../api/disciplinesApi';
+import { useMatchesPage } from '../hooks/useMatchesPage';
 import { Separator } from '../components/Separator';
 
 const statusLabel: Record<string, string> = {
     done: 'Abgeschlossen',
-    live: 'Läuft',
+    live: 'Live',
     next: 'Als nächstes',
     upcoming: 'Geplant',
 };
@@ -18,51 +16,68 @@ const statusStyle: Record<string, { background: string; color: string; border: s
     upcoming: { background: 'rgba(240,230,204,.06)', color: 'var(--cream-dark)', border: '1px solid rgba(240,230,204,.15)' },
 };
 
+const accentColor: Record<string, string> = {
+    live: '#e07070',
+    next: '#c9943a',
+    done: '#7dc49e',
+    upcoming: 'rgba(240,230,204,.15)',
+};
+
+
 export function MatchesPage() {
     const navigate = useNavigate();
-    const [disciplines, setDisciplines] = useState<DisciplineDto[]>([]);
-
-    useEffect(() => {
-        disciplinesApi.getAll().then(setDisciplines);
-    }, []);
+    const { disciplines } = useMatchesPage();
 
     return (
-        <div className="page-enter" style={{ padding: '60px 40px', maxWidth: 900, margin: '0 auto' }}>
+        <div className="page-enter" style={{ padding: '60px 40px', width: '100%', maxWidth: 1200, margin: '0 auto', boxSizing: 'border-box' }}>
             <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 5, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 10, display: 'block' }}>
                 Spielplan
             </span>
             <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)', marginBottom: 16 }}>
-                Begegnungen
+                Disziplinen
             </h2>
             <Separator />
 
-            <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))', gap: 16 }}>
                 {disciplines.map(d => {
-                    const style = statusStyle[d.status] ?? statusStyle.upcoming;
+                    const st = statusStyle[d.status] ?? statusStyle.upcoming;
+
                     return (
-                        <div key={d.id} onClick={() => navigate('/discipline/' + d.id)} style={{
-                            display: 'flex', alignItems: 'center', gap: 16,
-                            padding: '16px 20px', borderBottom: '1px solid rgba(240,230,204,.07)',
-                            cursor: 'pointer', transition: 'background .15s',
-                        }}
-                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(201,148,58,.06)')}
-                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        <div
+                            key={d.id}
+                            onClick={() => navigate('/disciplines/' + d.id)}
+                            style={{ border: '1px solid rgba(201,148,58,.2)', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'border-color .15s', overflow: 'hidden' }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,148,58,.55)'; e.currentTarget.style.background = 'rgba(201,148,58,.04)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,148,58,.2)'; e.currentTarget.style.background = 'transparent'; }}
                         >
-                            <div style={{ fontFamily: 'Cinzel, serif', fontSize: 12, color: 'var(--gold)', minWidth: 20, opacity: .7 }}>{d.number}</div>
-                            <div style={{ fontSize: 22 }}>{d.icon}</div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontFamily: 'Cinzel, serif', fontSize: 14, color: 'var(--cream)', marginBottom: 3 }}>{d.name}</div>
-                                {d.description && (
-                                    <div style={{ fontSize: 14, color: 'var(--cream-dark)', opacity: .7, fontStyle: 'italic' }}>{d.description}</div>
-                                )}
+                            {/* Status accent strip */}
+                            <div style={{ height: 3, background: accentColor[d.status] ?? accentColor.upcoming, flexShrink: 0 }} />
+
+                            {/* Card header */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '18px 20px' }}>
+                                <span style={{ fontSize: 32, lineHeight: 1, flexShrink: 0 }}>{d.icon}</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3, color: 'var(--gold)', opacity: .7, marginBottom: 4 }}>
+                                        {String(d.number).padStart(2, '0')}
+                                    </div>
+                                    <div style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 16, color: 'var(--cream)', marginBottom: d.description ? 4 : 0 }}>
+                                        {d.name}
+                                    </div>
+                                    {d.description && (
+                                        <div style={{ fontSize: 12, color: 'var(--cream-dark)', opacity: .6, fontStyle: 'italic' }}>{d.description}</div>
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                                    {d.status === 'live' && (
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#e07070', animation: 'pulse 1.4s ease infinite', display: 'inline-block' }} />
+                                    )}
+                                    <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, padding: '3px 10px', borderRadius: 2, textTransform: 'uppercase', ...st }}>
+                                        {statusLabel[d.status] ?? 'Geplant'}
+                                    </span>
+                                </div>
                             </div>
-                            {d.status === 'live' && (
-                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#e07070', animation: 'pulse 1.4s ease infinite', display: 'inline-block', marginRight: 4 }} />
-                            )}
-                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, padding: '3px 10px', borderRadius: 2, textTransform: 'uppercase', ...style }}>
-                                {statusLabel[d.status] ?? 'Geplant'}
-                            </span>
-                            <span style={{ color: 'var(--gold)', opacity: .5 }}>›</span>
+
+
                         </div>
                     );
                 })}
