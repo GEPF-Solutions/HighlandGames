@@ -27,6 +27,8 @@ public class Program
         builder.Services.AddScoped<IDisciplineService, DisciplineService>();
         builder.Services.AddScoped<IResultRepository, ResultRepository>();
         builder.Services.AddScoped<IResultService, ResultService>();
+        builder.Services.AddScoped<IMatchRepository, MatchRepository>();
+        builder.Services.AddScoped<IMatchService, MatchService>();
 
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>

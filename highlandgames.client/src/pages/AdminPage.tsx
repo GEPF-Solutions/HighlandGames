@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import type { TeamDto, DisciplineDto } from '../api/types';
+import type { TeamDto, DisciplineDto, MatchDto } from '../api/types';
 import { teamsApi } from '../api/teamsApi';
 import { disciplinesApi } from '../api/disciplinesApi';
 import { resultsApi } from '../api/resultsApi';
+import { getMatches, generateMatches, updateMatch } from '../api/matches';
 import { useAuth } from '../hooks/useAuth';
 import { Separator } from '../components/Separator';
 
@@ -16,12 +17,20 @@ export function AdminPage() {
     const [selectedDisc, setSelectedDisc] = useState('');
     const [points, setPoints] = useState<Record<string, { points: string; rawValue: string }>>({});
     const [saved, setSaved] = useState(false);
+    const [matchDisc, setMatchDisc] = useState('');
+    const [matchGender, setMatchGender] = useState<'m' | 'f'>('m');
+    const [matches, setMatches] = useState<MatchDto[]>([]);
+    const [matchScores, setMatchScores] = useState<Record<string, { a: string; b: string }>>({});
+    const [matchSaved, setMatchSaved] = useState(false);
 
     useEffect(() => {
         if (!loggedIn) return;
         disciplinesApi.getAll().then(d => {
             setDisciplines(d);
-            if (d.length > 0) setSelectedDisc(d[0].id);
+            if (d.length > 0) {
+                setSelectedDisc(d[0].id);
+                setMatchDisc(d[0].id);
+            }
         });
         loadTeams();
     }, [loggedIn]);
@@ -46,7 +55,6 @@ export function AdminPage() {
     const handleSaveResults = async () => {
         const disc = disciplines.find(d => d.id === selectedDisc);
         if (!disc) return;
-
         const entries = Object.entries(points).filter(([, v]) => v.points !== '');
         await Promise.all(entries.map(([teamId, v]) =>
             resultsApi.upsert({
@@ -65,6 +73,37 @@ export function AdminPage() {
         setDisciplines(prev => prev.map(d => d.id === id ? { ...d, status } : d));
     };
 
+    const handleLoadMatches = async () => {
+        const data = await getMatches(matchDisc, matchGender);
+        setMatches(data);
+        setMatchScores({});
+    };
+
+    const handleGenerateMatches = async () => {
+        await generateMatches(matchDisc, matchGender);
+        const data = await getMatches(matchDisc, matchGender);
+        setMatches(data);
+        setMatchScores({});
+    };
+
+    const handleSaveMatches = async () => {
+        await Promise.all(
+            Object.entries(matchScores).map(([id, v]) => {
+                const match = matches.find(m => m.id === id);
+                if (!match) return Promise.resolve();
+                const aScore = v.a !== '' ? parseInt(v.a) : null;
+                const bScore = v.b !== '' ? parseInt(v.b) : null;
+                const winnerId = aScore !== null && bScore !== null
+                    ? (aScore > bScore ? match.teamAId : match.teamBId)
+                    : null;
+                return updateMatch(id, { teamAScore: aScore, teamBScore: bScore, winnerTeamId: winnerId });
+            })
+        );
+        setMatchSaved(true);
+        handleLoadMatches();
+        setTimeout(() => setMatchSaved(false), 2200);
+    };
+
     const fieldStyle = {
         width: '100%', padding: '10px 14px',
         background: 'rgba(240,230,204,.06)', border: '1px solid rgba(240,230,204,.2)',
@@ -78,6 +117,25 @@ export function AdminPage() {
         marginBottom: 6, display: 'block',
     };
 
+    const sectionTitle = {
+        fontFamily: 'Cinzel, serif', fontSize: 14, letterSpacing: 2,
+        color: 'var(--gold)', textTransform: 'uppercase' as const, marginBottom: 16,
+    };
+
+    const btnPrimary = {
+        fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2,
+        textTransform: 'uppercase' as const, padding: '10px 16px', borderRadius: 2,
+        cursor: 'pointer', border: 'none', background: 'var(--gold)',
+        color: 'var(--green-dark)', whiteSpace: 'nowrap' as const,
+    };
+
+    const btnOutline = {
+        fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2,
+        textTransform: 'uppercase' as const, padding: '10px 16px', borderRadius: 2,
+        cursor: 'pointer', border: '1px solid rgba(240,230,204,.2)',
+        background: 'transparent', color: 'var(--cream-dark)', whiteSpace: 'nowrap' as const,
+    };
+
     if (!loggedIn) {
         return (
             <div className="page-enter" style={{ padding: '60px 40px', maxWidth: 480, margin: '0 auto' }}>
@@ -88,7 +146,6 @@ export function AdminPage() {
                     Admin
                 </h2>
                 <Separator />
-
                 <div style={{ background: 'rgba(240,230,204,.05)', border: '1px solid rgba(201,148,58,.2)', padding: 32, borderRadius: 2 }}>
                     <div style={{ textAlign: 'center', marginBottom: 28 }}>
                         <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
@@ -109,7 +166,7 @@ export function AdminPage() {
                     <button
                         onClick={() => login(password)}
                         disabled={loading}
-                        style={{ width: '100%', fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '12px 28px', borderRadius: 2, cursor: 'pointer', border: 'none', background: 'var(--gold)', color: 'var(--green-dark)' }}
+                        style={{ width: '100%', ...btnPrimary, padding: '12px 28px' }}
                     >
                         {loading ? 'Laden...' : 'Einloggen'}
                     </button>
@@ -125,15 +182,13 @@ export function AdminPage() {
                     <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 5, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 10, display: 'block' }}>Verwaltung</span>
                     <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)' }}>Admin</h2>
                 </div>
-                <button onClick={logout} style={{ background: 'none', border: '1px solid rgba(240,230,204,.2)', color: 'var(--cream-dark)', cursor: 'pointer', fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2, padding: '8px 16px', borderRadius: 2 }}>
-                    Abmelden
-                </button>
+                <button onClick={logout} style={{ ...btnOutline }}>Abmelden</button>
             </div>
             <Separator />
 
             {/* Disziplin Status */}
             <div style={{ marginBottom: 48 }}>
-                <h3 style={{ fontFamily: 'Cinzel, serif', fontSize: 14, letterSpacing: 2, color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 16 }}>Disziplin Status</h3>
+                <h3 style={sectionTitle}>Disziplin Status</h3>
                 <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
                     {disciplines.map(d => (
                         <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', borderBottom: '1px solid rgba(240,230,204,.07)' }}>
@@ -154,10 +209,69 @@ export function AdminPage() {
                 </div>
             </div>
 
+            {/* Begegnungen */}
+            <div style={{ marginBottom: 48 }}>
+                <h3 style={sectionTitle}>Begegnungen</h3>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 160 }}>
+                        <label style={labelStyle}>Disziplin</label>
+                        <select value={matchDisc} onChange={e => setMatchDisc(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
+                            {disciplines.map(d => (
+                                <option key={d.id} value={d.id} style={{ background: '#0e2218' }}>Spiel {d.number}: {d.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label style={labelStyle}>Kategorie</label>
+                        <select value={matchGender} onChange={e => setMatchGender(e.target.value as 'm' | 'f')} style={{ ...fieldStyle, width: 'auto', padding: '10px 12px', cursor: 'pointer' }}>
+                            <option value="m" style={{ background: '#0e2218' }}>♂ Männer</option>
+                            <option value="f" style={{ background: '#0e2218' }}>♀ Frauen</option>
+                        </select>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+                        <button onClick={handleLoadMatches} style={btnOutline}>Laden</button>
+                        <button onClick={handleGenerateMatches} style={btnPrimary}>Neu generieren</button>
+                    </div>
+                </div>
+
+                {matches.length > 0 && (
+                    <>
+                        <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden', marginBottom: 12 }}>
+                            {matches.map((m, i) => (
+                                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)', flexWrap: 'wrap' }}>
+                                    <span style={{ flex: 1, fontSize: 15, color: m.winnerTeamId === m.teamAId ? 'var(--gold)' : 'var(--cream)' }}>{m.teamAName}</span>
+                                    <input
+                                        type="number"
+                                        placeholder="Pkt"
+                                        value={matchScores[m.id]?.a ?? (m.teamAScore !== null ? String(m.teamAScore) : '')}
+                                        onChange={e => setMatchScores(prev => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value } }))}
+                                        style={{ ...fieldStyle, width: 64, textAlign: 'center', padding: '6px 8px', fontSize: 14 }}
+                                    />
+                                    <span style={{ fontFamily: 'Cinzel, serif', color: 'var(--cream-dark)', opacity: .5 }}>vs</span>
+                                    <input
+                                        type="number"
+                                        placeholder="Pkt"
+                                        value={matchScores[m.id]?.b ?? (m.teamBScore !== null ? String(m.teamBScore) : '')}
+                                        onChange={e => setMatchScores(prev => ({ ...prev, [m.id]: { ...prev[m.id], b: e.target.value } }))}
+                                        style={{ ...fieldStyle, width: 64, textAlign: 'center', padding: '6px 8px', fontSize: 14 }}
+                                    />
+                                    <span style={{ flex: 1, fontSize: 15, color: m.winnerTeamId === m.teamBId ? 'var(--gold)' : 'var(--cream)', textAlign: 'right' }}>{m.teamBName}</span>
+                                    {m.isManualOverride && (
+                                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 9, letterSpacing: 1, color: 'var(--gold)', opacity: .5 }}>manuell</span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <button onClick={handleSaveMatches} style={{ width: '100%', ...btnPrimary, padding: '12px 28px', background: matchSaved ? 'var(--green-light)' : 'var(--gold)', transition: 'background .3s' }}>
+                            {matchSaved ? '✓ Gespeichert!' : 'Begegnungen speichern'}
+                        </button>
+                    </>
+                )}
+            </div>
+
             {/* Teams verwalten */}
             <div style={{ marginBottom: 48 }}>
-                <h3 style={{ fontFamily: 'Cinzel, serif', fontSize: 14, letterSpacing: 2, color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 16 }}>Teams verwalten</h3>
-
+                <h3 style={sectionTitle}>Teams verwalten</h3>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                     <div style={{ flex: 1 }}>
                         <label style={labelStyle}>Teamname</label>
@@ -178,12 +292,9 @@ export function AdminPage() {
                         </select>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                        <button onClick={handleAddTeam} style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '10px 20px', borderRadius: 2, cursor: 'pointer', border: 'none', background: 'var(--gold)', color: 'var(--green-dark)', whiteSpace: 'nowrap' }}>
-                            + Hinzufügen
-                        </button>
+                        <button onClick={handleAddTeam} style={btnPrimary}>+ Hinzufügen</button>
                     </div>
                 </div>
-
                 <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
                     {teams.length === 0 ? (
                         <div style={{ padding: '30px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream-dark)', opacity: .4 }}>Keine Teams eingetragen</div>
@@ -203,8 +314,7 @@ export function AdminPage() {
 
             {/* Ergebnisse eintragen */}
             <div>
-                <h3 style={{ fontFamily: 'Cinzel, serif', fontSize: 14, letterSpacing: 2, color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 16 }}>Ergebnisse eintragen</h3>
-
+                <h3 style={sectionTitle}>Ergebnisse eintragen</h3>
                 <div style={{ marginBottom: 16 }}>
                     <label style={labelStyle}>Disziplin</label>
                     <select value={selectedDisc} onChange={e => setSelectedDisc(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
@@ -213,7 +323,6 @@ export function AdminPage() {
                         ))}
                     </select>
                 </div>
-
                 <div style={{ border: '1px solid rgba(240,230,204,.1)', overflow: 'hidden', marginBottom: 16 }}>
                     {teams.length === 0 ? (
                         <div style={{ padding: '30px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream-dark)', opacity: .4 }}>Zuerst Teams hinzufügen</div>
@@ -240,8 +349,7 @@ export function AdminPage() {
                         </div>
                     ))}
                 </div>
-
-                <button onClick={handleSaveResults} style={{ width: '100%', fontFamily: 'Cinzel, serif', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', padding: '12px 28px', borderRadius: 2, cursor: 'pointer', border: 'none', background: saved ? 'var(--green-light)' : 'var(--gold)', color: 'var(--green-dark)', transition: 'background .3s' }}>
+                <button onClick={handleSaveResults} style={{ width: '100%', ...btnPrimary, padding: '12px 28px', background: saved ? 'var(--green-light)' : 'var(--gold)', transition: 'background .3s' }}>
                     {saved ? '✓ Gespeichert!' : 'Ergebnisse speichern'}
                 </button>
                 <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--cream-dark)', opacity: .4, marginTop: 12, fontStyle: 'italic' }}>
