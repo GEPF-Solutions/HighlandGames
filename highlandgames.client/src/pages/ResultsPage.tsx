@@ -1,20 +1,100 @@
 import { Separator } from '../components/Separator';
 import { useResultsPage } from '../hooks/useResultsPage';
+import type { LeaderboardEntryDto, ResultDto } from '../api/types';
+
+const thStyle: React.CSSProperties = {
+    fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2,
+    textTransform: 'uppercase', color: 'var(--gold)',
+    padding: '14px 18px', textAlign: 'left',
+    borderBottom: '1px solid rgba(201,148,58,.25)',
+};
+
+const thNarrow: React.CSSProperties = { ...thStyle, whiteSpace: 'nowrap', textAlign: 'center' };
+
+const tdStyle: React.CSSProperties = {
+    padding: '12px 18px',
+    borderBottom: '1px solid rgba(240,230,204,.07)',
+};
+
+const tdNarrow: React.CSSProperties = { ...tdStyle, whiteSpace: 'nowrap', textAlign: 'center' };
+
+const rankMedal = (i: number) => String(i + 1);
+
+const rankColor = (i: number) =>
+    i === 0 ? '#f0c040' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : 'var(--cream-dark)';
+
+const empty = (
+    <div style={{
+        width: '100%', padding: '40px 20px', textAlign: 'center',
+        fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2,
+        color: 'var(--cream-dark)', opacity: .4,
+    }}>
+        Noch keine Ergebnisse
+    </div>
+);
+
+function LeaderboardTable({ entries }: { entries: LeaderboardEntryDto[] }) {
+    if (entries.length === 0) return empty;
+    return (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
+            <thead style={{ background: 'var(--green-dark)' }}>
+                <tr>
+                    <th style={thNarrow}>#</th>
+                    <th style={thStyle}>Team</th>
+                    <th style={thNarrow}>Punkte</th>
+                </tr>
+            </thead>
+            <tbody>
+                {entries.map((entry, i) => (
+                    <tr key={entry.teamId} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
+                        <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: rankColor(i) }}>{rankMedal(i)}</td>
+                        <td style={{ ...tdStyle, color: 'var(--cream)' }}>{entry.teamName}</td>
+                        <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', fontWeight: 700, color: 'var(--cream-dark)' }}>{entry.totalPoints}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    );
+}
+
+function DiscResultTable({ results, color }: { results: ResultDto[]; color: string }) {
+    if (results.length === 0) return empty;
+    return (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
+            <thead style={{ background: 'var(--green-dark)' }}>
+                <tr>
+                    <th style={thNarrow}>#</th>
+                    <th style={thStyle}>Team</th>
+                    <th style={thNarrow}>Punkte</th>
+                    <th style={thNarrow}>Wert</th>
+                </tr>
+            </thead>
+            <tbody>
+                {results.map((r, i) => (
+                    <tr key={r.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
+                        <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: rankColor(i) }}>{rankMedal(i)}</td>
+                        <td style={{ ...tdStyle, color: 'var(--cream)' }}>{r.teamName}</td>
+                        <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', fontWeight: 700, color }}>{r.points}</td>
+                        <td style={{ ...tdNarrow, color: 'var(--cream-dark)', opacity: .7, fontStyle: 'italic' }}>{r.rawValue ?? '–'}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    );
+}
 
 export function ResultsPage() {
-    const { disciplines, gender, setGender, activeTab, setActiveTab, leaderboard, discResults, loading } = useResultsPage();
+    const { disciplines, activeTab, setActiveTab, mLeaderboard, fLeaderboard, mDiscResults, fDiscResults, loading } = useResultsPage();
 
     const tabs = [{ id: 'total', name: 'Gesamt' }, ...disciplines.map(d => ({ id: d.id, name: d.name }))];
 
-    const rankMedal = (i: number) => {
-        if (i === 0) return '🥇';
-        if (i === 1) return '🥈';
-        if (i === 2) return '🥉';
-        return String(i + 1);
-    };
+    const genders = [
+        { label: '♂ Männer', color: '#7aadff' },
+        { label: '♀ Frauen', color: '#ff8aaa' },
+    ];
 
     return (
-        <div className="page-enter" style={{ padding: '60px 40px', maxWidth: 1100, margin: '0 auto' }}>
+        <div className="page-enter" style={{ padding: '60px 40px', maxWidth: 1200, margin: '0 auto' }}>
             <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 5, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 10, display: 'block' }}>
                 Wettkampf 2026
             </span>
@@ -23,35 +103,13 @@ export function ResultsPage() {
             </h2>
             <Separator />
 
-            {/* Gender Toggle */}
-            <div style={{ display: 'flex', gap: 2, marginBottom: 28 }}>
-                {(['m', 'f'] as const).map(g => (
-                    <button key={g} onClick={() => setGender(g)} style={{
-                        flex: 1, maxWidth: 200, padding: '10px 24px', cursor: 'pointer',
-                        fontFamily: 'Cinzel, serif', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase',
-                        borderRadius: 2, transition: 'all .2s', border: '1px solid rgba(240,230,204,.2)',
-                        background: gender === g
-                            ? g === 'm' ? 'rgba(30,80,200,.2)' : 'rgba(200,30,80,.2)'
-                            : 'transparent',
-                        color: gender === g
-                            ? g === 'm' ? '#7aadff' : '#ff8aaa'
-                            : 'var(--cream-dark)',
-                        borderColor: gender === g
-                            ? g === 'm' ? 'rgba(30,80,200,.4)' : 'rgba(200,30,80,.4)'
-                            : 'rgba(240,230,204,.2)',
-                    }}>
-                        {g === 'm' ? '♂ Männer' : '♀ Frauen'}
-                    </button>
-                ))}
-            </div>
-
-            {/* Discipline Tabs */}
-            <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', marginBottom: 0 }}>
+            {/* Discipline Tabs – Desktop */}
+            <div className="tabs-desktop" style={{ display: 'flex', gap: 2, flexWrap: 'wrap', marginBottom: 24 }}>
                 {tabs.map(t => (
                     <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
                         fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2,
                         textTransform: 'uppercase', padding: '10px 20px', cursor: 'pointer',
-                        transition: 'all .2s', borderBottom: 'none', borderRadius: '2px 2px 0 0',
+                        transition: 'all .2s', borderRadius: '2px 2px 0 0', borderBottom: 'none',
                         background: activeTab === t.id ? 'var(--green-dark)' : 'rgba(240,230,204,.06)',
                         color: activeTab === t.id ? 'var(--gold)' : 'var(--cream-dark)',
                         border: activeTab === t.id ? '1px solid rgba(201,148,58,.4)' : '1px solid rgba(240,230,204,.12)',
@@ -61,70 +119,47 @@ export function ResultsPage() {
                 ))}
             </div>
 
-            {/* Table */}
-            <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
-                {loading ? (
-                    <div style={{ padding: '60px 20px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2, color: 'var(--cream-dark)', opacity: .4 }}>
-                        Laden...
-                    </div>
-                ) : activeTab === 'total' ? (
-                    leaderboard.length > 0 ? (
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
-                            <thead style={{ background: 'var(--green-dark)' }}>
-                                <tr>
-                                    <th style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gold)', padding: '14px 18px', textAlign: 'left', borderBottom: '1px solid rgba(201,148,58,.25)' }}>#</th>
-                                    <th style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gold)', padding: '14px 18px', textAlign: 'left', borderBottom: '1px solid rgba(201,148,58,.25)' }}>Team</th>
-                                    <th style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gold)', padding: '14px 18px', textAlign: 'left', borderBottom: '1px solid rgba(201,148,58,.25)' }}>Punkte</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {leaderboard.map((entry, i) => (
-                                    <tr key={entry.teamId} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
-                                        <td style={{ padding: '12px 18px', fontFamily: 'Cinzel, serif', color: i === 0 ? '#f0c040' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : 'var(--cream-dark)', borderBottom: '1px solid rgba(240,230,204,.07)' }}>
-                                            {rankMedal(i)}
-                                        </td>
-                                        <td style={{ padding: '12px 18px', color: 'var(--cream)', borderBottom: '1px solid rgba(240,230,204,.07)' }}>{entry.teamName}</td>
-                                        <td style={{ padding: '12px 18px', color: 'var(--cream-dark)', fontFamily: 'Cinzel, serif', fontWeight: 700, borderBottom: '1px solid rgba(240,230,204,.07)' }}>{entry.totalPoints}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <div style={{ padding: '60px 20px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2, color: 'var(--cream-dark)', opacity: .4, border: '1px dashed rgba(201,148,58,.2)' }}>
-                            Ergebnisse werden nach dem Wettkampf veröffentlicht
+            {/* Discipline Tabs – Mobile Dropdown */}
+            <select
+                className="tabs-mobile"
+                value={activeTab}
+                onChange={e => setActiveTab(e.target.value)}
+                style={{
+                    width: '100%', marginBottom: 24, padding: '10px 14px',
+                    background: 'var(--green-dark)', border: '1px solid rgba(201,148,58,.4)',
+                    color: 'var(--gold)', fontFamily: 'Cinzel, serif', fontSize: 12,
+                    letterSpacing: 2, textTransform: 'uppercase', borderRadius: 2, cursor: 'pointer',
+                }}
+            >
+                {tabs.map(t => (
+                    <option key={t.id} value={t.id} style={{ background: '#0e2218' }}>{t.name}</option>
+                ))}
+            </select>
+
+            {loading ? (
+                <div style={{ padding: '60px 20px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2, color: 'var(--cream-dark)', opacity: .4 }}>
+                    Laden...
+                </div>
+            ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+                    {genders.map(({ label, color }, gi) => (
+                        <div key={label} style={{ flex: '1 1 300px', minWidth: 0, overflow: 'hidden' }}>
+                            <div style={{
+                                fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3,
+                                textTransform: 'uppercase', color, marginBottom: 12,
+                            }}>
+                                {label}
+                            </div>
+                            <div style={{ display: 'block', width: '100%', border: '1px solid rgba(201,148,58,.2)', overflowX: 'auto' }}>
+                                {activeTab === 'total'
+                                    ? <LeaderboardTable entries={gi === 0 ? mLeaderboard : fLeaderboard} />
+                                    : <DiscResultTable results={gi === 0 ? mDiscResults : fDiscResults} color={color} />
+                                }
+                            </div>
                         </div>
-                    )
-                ) : (
-                    discResults.length > 0 ? (
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
-                            <thead style={{ background: 'var(--green-dark)' }}>
-                                <tr>
-                                    <th style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gold)', padding: '14px 18px', textAlign: 'left', borderBottom: '1px solid rgba(201,148,58,.25)' }}>#</th>
-                                    <th style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gold)', padding: '14px 18px', textAlign: 'left', borderBottom: '1px solid rgba(201,148,58,.25)' }}>Team</th>
-                                    <th style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gold)', padding: '14px 18px', textAlign: 'left', borderBottom: '1px solid rgba(201,148,58,.25)' }}>Punkte</th>
-                                    <th style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gold)', padding: '14px 18px', textAlign: 'left', borderBottom: '1px solid rgba(201,148,58,.25)' }}>Wert</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {discResults.map((result, i) => (
-                                    <tr key={result.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
-                                        <td style={{ padding: '12px 18px', fontFamily: 'Cinzel, serif', color: i === 0 ? '#f0c040' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : 'var(--cream-dark)', borderBottom: '1px solid rgba(240,230,204,.07)' }}>
-                                            {rankMedal(i)}
-                                        </td>
-                                        <td style={{ padding: '12px 18px', color: 'var(--cream)', borderBottom: '1px solid rgba(240,230,204,.07)' }}>{result.teamName}</td>
-                                        <td style={{ padding: '12px 18px', color: 'var(--cream-dark)', fontFamily: 'Cinzel, serif', fontWeight: 700, borderBottom: '1px solid rgba(240,230,204,.07)' }}>{result.points}</td>
-                                        <td style={{ padding: '12px 18px', color: 'var(--cream-dark)', opacity: .7, fontStyle: 'italic', borderBottom: '1px solid rgba(240,230,204,.07)' }}>{result.rawValue ?? '–'}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <div style={{ padding: '60px 20px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2, color: 'var(--cream-dark)', opacity: .4, border: '1px dashed rgba(201,148,58,.2)' }}>
-                            Ergebnisse werden nach dem Wettkampf veröffentlicht
-                        </div>
-                    )
-                )}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
