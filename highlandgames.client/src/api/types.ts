@@ -44,3 +44,16 @@ export interface UpsertResultDto {
     points: number;
     rawValue?: string;
 }
+
+export interface MatchDto {
+    id: string;
+    disciplineId: string;
+    teamAId: string;
+    teamAName: string;
+    teamBId: string;
+    teamBName: string;
+    teamAScore: number | null;
+    teamBScore: number | null;
+    winnerTeamId: string | null;
+    isManualOverride: boolean;
+}

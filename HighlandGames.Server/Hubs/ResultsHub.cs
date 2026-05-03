@@ -13,4 +13,14 @@ public class ResultsHub : Hub
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, $"discipline-{disciplineId}");
     }
+
+    public async Task JoinMatchesGroup(string disciplineId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"matches-{disciplineId}");
+    }
+
+    public async Task LeaveMatchesGroup(string disciplineId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"matches-{disciplineId}");
+    }
 }
