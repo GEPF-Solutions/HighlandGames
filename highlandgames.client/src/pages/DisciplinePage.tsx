@@ -99,7 +99,6 @@ export function DisciplinePage() {
                         <th style={thNarrow}>#</th>
                         <th style={thStyle}>Team</th>
                         <th style={thNarrow}>Punkte</th>
-                        <th style={thNarrow}>Wert</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -107,8 +106,9 @@ export function DisciplinePage() {
                         <tr key={r.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
                             <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: rankColor(i) }}>{rankMedal(i)}</td>
                             <td style={{ ...tdStyle, color: 'var(--cream)' }}>{r.teamName}</td>
-                            <td style={{ ...tdNarrow, color, fontFamily: 'Cinzel, serif', fontWeight: 700 }}>{r.points}</td>
-                            <td style={{ ...tdNarrow, color: 'var(--cream-dark)', opacity: .7, fontStyle: 'italic' }}>{r.rawValue ?? '–'}</td>
+                            <td style={{ ...tdNarrow, color, fontFamily: 'Cinzel, serif', fontWeight: 700 }}>
+                                {r.points}{r.rawValue != null && <span style={{ fontSize: 11, fontWeight: 400, fontStyle: 'italic', color: 'var(--cream-dark)', opacity: .6, marginLeft: 4 }}>({r.rawValue})</span>}
+                            </td>
                         </tr>
                     ))}
                 </tbody>
@@ -188,7 +188,7 @@ export function DisciplinePage() {
             <div style={{ fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 3, color: 'var(--gold)', marginBottom: 16, textTransform: 'uppercase' }}>Begegnungen</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginBottom: 48 }}>
                 {genders.map(({ label, color, matches }) => (
-                    <div key={label} style={{ flex: '1 1 300px', minWidth: 0, overflow: 'hidden' }}>
+                    <div key={label} style={{ flex: '1 1 300px', minWidth: 0 }}>
                         <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, color, marginBottom: 12, textTransform: 'uppercase' }}>{label}</div>
                         <div style={{ display: 'block', width: '100%', border: '1px solid rgba(201,148,58,.2)', overflowX: 'auto' }}>
                             {renderMatches(matches)}
@@ -201,7 +201,7 @@ export function DisciplinePage() {
             <div style={{ fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 3, color: 'var(--gold)', marginBottom: 16, textTransform: 'uppercase' }}>Ergebnisse</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
                 {genders.map(({ label, color, results: res }) => (
-                    <div key={label} style={{ flex: '1 1 300px', minWidth: 0, overflow: 'hidden' }}>
+                    <div key={label} style={{ flex: '1 1 300px', minWidth: 0 }}>
                         <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, color, marginBottom: 12, textTransform: 'uppercase' }}>{label}</div>
                         <div style={{ display: 'block', width: '100%', border: '1px solid rgba(201,148,58,.2)', overflowX: 'auto' }}>
                             {renderResults(res, color)}
