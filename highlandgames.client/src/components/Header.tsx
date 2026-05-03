@@ -64,27 +64,27 @@ export function Header() {
 
                 {/* Right side: live/next badge + hamburger */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                    {disc && (
-                        <div
-                            onClick={() => go('/disciplines/' + disc.id)}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-                                background: isLive ? 'rgba(122,28,28,.55)' : 'rgba(201,148,58,.1)',
-                                border: isLive ? '1px solid rgba(200,60,60,.4)' : '1px solid rgba(201,148,58,.3)',
-                                padding: '7px 14px', borderRadius: 2,
-                            }}
-                        >
-                            {isLive && (
-                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#e07070', animation: 'pulse 1.4s ease infinite', display: 'inline-block', flexShrink: 0 }} />
-                            )}
-                            <span className="header-badge-label" style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: isLive ? '#e07070' : 'var(--gold)', whiteSpace: 'nowrap' }}>
-                                {isLive ? 'Live' : 'Als nächstes'}
-                            </span>
-                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream)', whiteSpace: 'nowrap' }}>
-                                {disc.icon} <span className="header-disc-name">{disc.name}</span>
-                            </span>
-                        </div>
-                    )}
+                    <div
+                        onClick={() => disc && go('/disciplines/' + disc.id)}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 8,
+                            cursor: disc ? 'pointer' : 'default',
+                            visibility: disc ? 'visible' : 'hidden',
+                            background: isLive ? 'rgba(122,28,28,.55)' : 'rgba(201,148,58,.1)',
+                            border: isLive ? '1px solid rgba(200,60,60,.4)' : '1px solid rgba(201,148,58,.3)',
+                            padding: '7px 14px', borderRadius: 2,
+                        }}
+                    >
+                        {isLive && (
+                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#e07070', animation: 'pulse 1.4s ease infinite', display: 'inline-block', flexShrink: 0 }} />
+                        )}
+                        <span className="header-badge-label" style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: isLive ? '#e07070' : 'var(--gold)', whiteSpace: 'nowrap' }}>
+                            {isLive ? 'Live' : 'Als nächstes'}
+                        </span>
+                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream)', whiteSpace: 'nowrap' }}>
+                            {disc?.icon} <span className="header-disc-name">{disc?.name}</span>
+                        </span>
+                    </div>
 
                     {/* Hamburger — mobile only */}
                     <button
