@@ -1,5 +1,5 @@
 ﻿using HighlandGames.Server.DTOs;
-using HighlandGames.Server.Services;
+using HighlandGames.Server.Services.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HighlandGames.Server.Controllers;
