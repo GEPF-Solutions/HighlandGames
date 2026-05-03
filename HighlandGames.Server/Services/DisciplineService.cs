@@ -1,10 +1,12 @@
 ﻿using HighlandGames.Server.DTOs;
+using HighlandGames.Server.Hubs;
 using HighlandGames.Server.Repositories.Abstractions;
 using HighlandGames.Server.Services.Abstractions;
+using Microsoft.AspNetCore.SignalR;
 
 namespace HighlandGames.Server.Services;
 
-public class DisciplineService(IDisciplineRepository disciplineRepository) : IDisciplineService
+public class DisciplineService(IDisciplineRepository disciplineRepository, IHubContext<ResultsHub> hubContext) : IDisciplineService
 {
     public async Task<IEnumerable<DisciplineDto>> GetAllAsync()
     {
@@ -28,6 +30,10 @@ public class DisciplineService(IDisciplineRepository disciplineRepository) : IDi
 
         discipline.Status = dto.Status;
         await disciplineRepository.UpdateAsync(discipline);
+
+        var updated = new DisciplineDto(discipline.Id, discipline.Number, discipline.Name, discipline.Icon, discipline.Description, discipline.Status);
+        await hubContext.Clients.All.SendAsync("DisciplineStatusChanged", updated);
+
         return true;
     }
 }

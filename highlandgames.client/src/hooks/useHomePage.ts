@@ -40,8 +40,14 @@ export function useHomePage() {
             else setFLeaderboard(leaderboard);
         });
 
+        on('DisciplineStatusChanged', (data: unknown) => {
+            const updated = data as DisciplineDto;
+            setDisciplines(prev => prev.map(d => d.id === updated.id ? updated : d));
+        });
+
         return () => {
             off('LeaderboardUpdated');
+            off('DisciplineStatusChanged');
         };
     }, []);
 

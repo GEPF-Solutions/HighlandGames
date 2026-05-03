@@ -15,11 +15,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Result>().HasIndex(r => new { r.TeamId, r.DisciplineId }).IsUnique();
 
         modelBuilder.Entity<Discipline>().HasData(
-            new Discipline { Id = "sync", Number = 1, Name = "Synchronlauf", Icon = "🏃" },
-            new Discipline { Id = "weight", Number = 2, Name = "Gewichtlauf", Icon = "🏋️" },
-            new Discipline { Id = "caber", Number = 3, Name = "Baumstammwerfen", Icon = "🪵" },
-            new Discipline { Id = "rope", Number = 4, Name = "Seilziehen", Icon = "💪" },
-            new Discipline { Id = "fire", Number = 5, Name = "Durstlöschen", Icon = "🔥" }
+            new Discipline { Id = "sync", Number = 1, Name = "Brettlauf", Icon = "🏃" },
+            new Discipline { Id = "weight", Number = 2, Name = "Kübellauf", Icon = "🏋️" },
+            new Discipline { Id = "caber", Number = 3, Name = "Seilziehen", Icon = "💪" },
+            new Discipline { Id = "rope", Number = 4, Name = "Baumstammwerfen", Icon = "🪵" },
+            new Discipline { Id = "fire", Number = 5, Name = "Wetttrinken", Icon = "🔥" }
         );
     }
 }

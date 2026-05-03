@@ -3,6 +3,7 @@ using System;
 using HighlandGames.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HighlandGames.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260503185359_03-05-2026")]
+    partial class _03052026
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,7 +56,7 @@ namespace HighlandGames.Server.Migrations
                         {
                             Id = "sync",
                             Icon = "🏃",
-                            Name = "Brettlauf",
+                            Name = "Synchronlauf",
                             Number = 1,
                             Status = "upcoming"
                         },
@@ -61,23 +64,23 @@ namespace HighlandGames.Server.Migrations
                         {
                             Id = "weight",
                             Icon = "🏋️",
-                            Name = "Kübellauf",
+                            Name = "Gewichtlauf",
                             Number = 2,
                             Status = "upcoming"
                         },
                         new
                         {
                             Id = "caber",
-                            Icon = "💪",
-                            Name = "Seilziehen",
+                            Icon = "🪵",
+                            Name = "Baumstammwerfen",
                             Number = 3,
                             Status = "upcoming"
                         },
                         new
                         {
                             Id = "rope",
-                            Icon = "🪵",
-                            Name = "Baumstammwerfen",
+                            Icon = "💪",
+                            Name = "Seilziehen",
                             Number = 4,
                             Status = "upcoming"
                         },
@@ -85,7 +88,7 @@ namespace HighlandGames.Server.Migrations
                         {
                             Id = "fire",
                             Icon = "🔥",
-                            Name = "Wetttrinken",
+                            Name = "Durstlöschen",
                             Number = 5,
                             Status = "upcoming"
                         });

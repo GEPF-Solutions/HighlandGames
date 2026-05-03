@@ -1,40 +1,10 @@
-import { useHomePage } from '../hooks/useHomePage';
+import { useNavigate } from 'react-router-dom';
 
-interface HomePageProps {
-    navigate: (page: string) => void;
-}
-
-export function HomePage({ navigate }: HomePageProps) {
-    const { liveDisc } = useHomePage();
+export function HomePage() {
+    const navigate = useNavigate();
 
     return (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-
-            {/* Live Banner */}
-            {liveDisc && (
-                <div style={{
-                    background: 'rgba(122,28,28,.55)',
-                    borderTop: '1px solid rgba(200,60,60,.3)',
-                    borderBottom: '1px solid rgba(200,60,60,.3)',
-                    padding: '10px 40px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
-                }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2, color: '#e07070' }}>
-                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#e07070', animation: 'pulse 1.4s ease infinite', display: 'inline-block' }} />
-                        LIVE
-                    </span>
-                    <span style={{ fontFamily: 'Cinzel, serif', fontSize: 14, color: 'var(--cream)' }}>
-                        Spiel {liveDisc.number}: {liveDisc.name}
-                    </span>
-                    <button onClick={() => navigate('disc-' + liveDisc.id)} style={{
-                        marginLeft: 'auto', fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 2,
-                        textTransform: 'uppercase', padding: '6px 16px', borderRadius: 2,
-                        cursor: 'pointer', background: 'transparent', color: 'var(--cream)',
-                        border: '1px solid rgba(240,230,204,.4)',
-                    }}>
-                        Details ansehen
-                    </button>
-                </div>
-            )}
 
             {/* Hero */}
             <section className="tartan" style={{
@@ -89,7 +59,7 @@ export function HomePage({ navigate }: HomePageProps) {
                     </p>
 
                     <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button onClick={() => navigate('results')} style={{
+                        <button onClick={() => navigate('/results')} style={{
                             fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2,
                             textTransform: 'uppercase', padding: '14px 32px', borderRadius: 2,
                             cursor: 'pointer', border: 'none',
@@ -98,7 +68,7 @@ export function HomePage({ navigate }: HomePageProps) {
                         }}>
                             Zu den Ergebnissen
                         </button>
-                        <button onClick={() => navigate('matches')} style={{
+                        <button onClick={() => navigate('/disciplines')} style={{
                             fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2,
                             textTransform: 'uppercase', padding: '14px 32px', borderRadius: 2,
                             cursor: 'pointer', background: 'transparent', color: 'var(--cream)',

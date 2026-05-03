@@ -3,6 +3,7 @@
 public record MatchDto(
     Guid Id,
     string DisciplineId,
+    string Gender,
     Guid TeamAId,
     string TeamAName,
     Guid TeamBId,

@@ -72,3 +72,38 @@ body {
 .page-enter {
     animation: pageIn .3s ease both;
 }
+
+@media (max-width: 640px) {
+    .tabs-desktop { display: none !important; }
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    width: 100%;
+}
+
+@media (min-width: 641px) {
+    .tabs-mobile { display: none !important; }
+    .results-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 767px) {
+    .header-nav-desktop { display: none !important; }
+    .header-hamburger { display: flex !important; }
+    .header-mobile-menu { display: flex !important; }
+    .header-subtitle { font-size: 7px !important; letter-spacing: 2px !important; }
+    .header-title { font-size: 11px !important; }
+    .header-badge-label { display: none !important; }
+    .header-disc-name { display: none !important; }
+    .site-header { padding: 12px 20px !important; }
+    .page-content { padding: 40px 20px !important; }
+}
+
+@keyframes shimmerSlide {
+    0%   { transform: translateX(-100%); opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { transform: translateX(300%); opacity: 0; }
+}
