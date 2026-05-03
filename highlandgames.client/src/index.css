@@ -81,6 +81,18 @@ body {
     .tabs-mobile { display: none !important; }
 }
 
+@media (max-width: 767px) {
+    .header-nav-desktop { display: none !important; }
+    .header-hamburger { display: flex !important; }
+    .header-mobile-menu { display: flex !important; }
+    .header-subtitle { font-size: 7px !important; letter-spacing: 2px !important; }
+    .header-title { font-size: 11px !important; }
+    .header-badge-label { display: none !important; }
+    .header-disc-name { display: none !important; }
+    .site-header { padding: 12px 20px !important; }
+    .page-content { padding: 40px 20px !important; }
+}
+
 @keyframes shimmerSlide {
     0%   { transform: translateX(-100%); opacity: 0; }
     15%  { opacity: 1; }

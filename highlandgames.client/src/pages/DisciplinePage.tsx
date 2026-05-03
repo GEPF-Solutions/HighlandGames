@@ -153,7 +153,7 @@ export function DisciplinePage() {
     ];
 
     return (
-        <div className="page-enter" style={{ padding: '60px 40px', width: '100%', maxWidth: 1200, margin: '0 auto', boxSizing: 'border-box' }}>
+        <div className="page-enter page-content" style={{ padding: '60px 40px', width: '100%', maxWidth: 1200, margin: '0 auto', boxSizing: 'border-box' }}>
             <button onClick={() => navigate('/disciplines')} style={{
                 background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer',
                 fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2, marginBottom: 24, padding: 0,
