@@ -4,12 +4,7 @@ import { useHomePage } from '../hooks/useHomePage';
 import { Footer } from '../components/Footer';
 import type { LeaderboardEntryDto } from '../api/types';
 
-const rankMedal = (i: number) => {
-    if (i === 0) return '🥇';
-    if (i === 1) return '🥈';
-    if (i === 2) return '🥉';
-    return String(i + 1);
-};
+const rankMedal = (i: number) => String(i + 1);
 
 const rankColor = (i: number) =>
     i === 0 ? '#f0c040' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : 'var(--cream-dark)';
@@ -124,7 +119,7 @@ function LeaderboardColumn({ label, accentColor, entries, shimmerIds }: ColumnPr
                         <span style={{
                             position: 'relative',
                             width: 56, fontFamily: 'Cinzel, serif',
-                            fontSize: i < 3 ? 26 : 20, color: rankColor(i),
+                            fontSize: 24, color: rankColor(i),
                             flexShrink: 0,
                         }}>
                             {rankMedal(i)}
