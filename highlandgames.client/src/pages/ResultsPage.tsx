@@ -94,9 +94,9 @@ export function ResultsPage() {
     ];
 
     return (
-        <div className="page-enter" style={{ padding: '60px 40px', maxWidth: 1200, margin: '0 auto' }}>
+        <div className="page-enter" style={{ padding: '60px 40px', width: '100%', maxWidth: 1200, margin: '0 auto', boxSizing: 'border-box' }}>
             <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 5, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 10, display: 'block' }}>
-                Wettkampf 2026
+                Wettkampf
             </span>
             <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)', marginBottom: 16 }}>
                 Ergebnisse

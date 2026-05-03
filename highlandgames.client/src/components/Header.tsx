@@ -7,7 +7,7 @@ export function Header() {
     const navLinks = [
         { path: '/', label: 'Start' },
         { path: '/results', label: 'Ergebnisse' },
-        { path: '/matches', label: 'Begegnungen' },
+        { path: '/disciplines', label: 'Disziplinen' },
         { path: '/teams', label: 'Teams' },
         { path: '/admin', label: 'Admin' },
     ];

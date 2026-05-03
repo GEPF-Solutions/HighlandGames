@@ -68,7 +68,7 @@ export function HomePage() {
                         }}>
                             Zu den Ergebnissen
                         </button>
-                        <button onClick={() => navigate('/matches')} style={{
+                        <button onClick={() => navigate('/disciplines')} style={{
                             fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2,
                             textTransform: 'uppercase', padding: '14px 32px', borderRadius: 2,
                             cursor: 'pointer', background: 'transparent', color: 'var(--cream)',

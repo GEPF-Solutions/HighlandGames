@@ -9,7 +9,7 @@ import { useSignalR } from '../hooks/useSignalR';
 
 const statusLabel: Record<string, string> = {
     done: 'Abgeschlossen',
-    live: 'Läuft',
+    live: 'Live',
     next: 'Als nächstes',
     upcoming: 'Geplant',
 };
@@ -153,12 +153,12 @@ export function DisciplinePage() {
     ];
 
     return (
-        <div className="page-enter" style={{ padding: '60px 40px', maxWidth: 1000, margin: '0 auto' }}>
-            <button onClick={() => navigate('/matches')} style={{
+        <div className="page-enter" style={{ padding: '60px 40px', width: '100%', maxWidth: 1200, margin: '0 auto', boxSizing: 'border-box' }}>
+            <button onClick={() => navigate('/disciplines')} style={{
                 background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer',
                 fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2, marginBottom: 24, padding: 0,
             }}>
-                ← Alle Begegnungen
+                ← Alle Disziplinen
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 8, flexWrap: 'wrap' }}>
