@@ -27,10 +27,7 @@ export function AdminPage() {
         if (!loggedIn) return;
         disciplinesApi.getAll().then(d => {
             setDisciplines(d);
-            if (d.length > 0) {
-                setSelectedDisc(d[0].id);
-                setMatchDisc(d[0].id);
-            }
+            if (d.length > 0) { setSelectedDisc(d[0].id); setMatchDisc(d[0].id); }
         });
         loadTeams();
     }, [loggedIn]);
@@ -53,16 +50,9 @@ export function AdminPage() {
     };
 
     const handleSaveResults = async () => {
-        const disc = disciplines.find(d => d.id === selectedDisc);
-        if (!disc) return;
         const entries = Object.entries(points).filter(([, v]) => v.points !== '');
         await Promise.all(entries.map(([teamId, v]) =>
-            resultsApi.upsert({
-                teamId,
-                disciplineId: selectedDisc,
-                points: parseInt(v.points),
-                rawValue: v.rawValue || undefined,
-            })
+            resultsApi.upsert({ teamId, disciplineId: selectedDisc, points: parseInt(v.points), rawValue: v.rawValue || undefined })
         ));
         setSaved(true);
         setTimeout(() => setSaved(false), 2200);
@@ -94,8 +84,7 @@ export function AdminPage() {
                 const aScore = v.a !== '' ? parseInt(v.a) : null;
                 const bScore = v.b !== '' ? parseInt(v.b) : null;
                 const winnerId = aScore !== null && bScore !== null
-                    ? (aScore > bScore ? match.teamAId : match.teamBId)
-                    : null;
+                    ? (aScore > bScore ? match.teamAId : match.teamBId) : null;
                 return updateMatch(id, { teamAScore: aScore, teamBScore: bScore, winnerTeamId: winnerId });
             })
         );
@@ -136,9 +125,17 @@ export function AdminPage() {
         background: 'transparent', color: 'var(--cream-dark)', whiteSpace: 'nowrap' as const,
     };
 
+    const genderBadge = (gender: string) => ({
+        fontFamily: 'Cinzel, serif', fontSize: 10, padding: '2px 8px', borderRadius: 2,
+        background: gender === 'm' ? 'rgba(30,80,200,.2)' : 'rgba(200,30,80,.2)',
+        color: gender === 'm' ? '#7aadff' : '#ff8aaa',
+        border: gender === 'm' ? '1px solid rgba(30,80,200,.3)' : '1px solid rgba(200,30,80,.3)',
+        flexShrink: 0 as const,
+    });
+
     if (!loggedIn) {
         return (
-            <div className="page-enter" style={{ padding: '60px 40px', maxWidth: 480, margin: '0 auto' }}>
+            <div className="page-enter page-content" style={{ padding: '60px 40px', maxWidth: 480, margin: '0 auto', width: '100%', boxSizing: 'border-box' as const }}>
                 <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 5, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 10, display: 'block' }}>
                     Verwaltung
                 </span>
@@ -153,21 +150,14 @@ export function AdminPage() {
                     </div>
                     <div style={{ marginBottom: 16 }}>
                         <label style={labelStyle}>Passwort</label>
-                        <input
-                            type="password"
-                            value={password}
-                            placeholder="Passwort eingeben"
+                        <input type="password" value={password} placeholder="Passwort eingeben"
                             onChange={e => setPassword(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && login(password)}
                             style={fieldStyle}
                         />
                         {error && <div style={{ color: '#e07070', fontSize: 13, marginTop: 8, fontFamily: 'Cinzel, serif', letterSpacing: 1 }}>{error}</div>}
                     </div>
-                    <button
-                        onClick={() => login(password)}
-                        disabled={loading}
-                        style={{ width: '100%', ...btnPrimary, padding: '12px 28px' }}
-                    >
+                    <button onClick={() => login(password)} disabled={loading} style={{ width: '100%', ...btnPrimary, padding: '12px 28px' }}>
                         {loading ? 'Laden...' : 'Einloggen'}
                     </button>
                 </div>
@@ -176,13 +166,13 @@ export function AdminPage() {
     }
 
     return (
-        <div className="page-enter" style={{ padding: '60px 40px', maxWidth: 800, margin: '0 auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
+        <div className="page-enter page-content" style={{ padding: '60px 40px', maxWidth: 800, margin: '0 auto', width: '100%', boxSizing: 'border-box' as const }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, gap: 16, flexWrap: 'wrap' }}>
                 <div>
                     <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 5, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 10, display: 'block' }}>Verwaltung</span>
                     <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)' }}>Admin</h2>
                 </div>
-                <button onClick={logout} style={{ ...btnOutline }}>Abmelden</button>
+                <button onClick={logout} style={btnOutline}>Abmelden</button>
             </div>
             <Separator />
 
@@ -191,14 +181,11 @@ export function AdminPage() {
                 <h3 style={sectionTitle}>Disziplin Status</h3>
                 <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
                     {disciplines.map(d => (
-                        <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', borderBottom: '1px solid rgba(240,230,204,.07)' }}>
+                        <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: 20 }}>{d.icon}</span>
-                            <span style={{ flex: 1, fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream)' }}>{d.name}</span>
-                            <select
-                                value={d.status}
-                                onChange={e => handleStatusChange(d.id, e.target.value)}
-                                style={{ ...fieldStyle, width: 'auto', padding: '6px 12px', cursor: 'pointer' }}
-                            >
+                            <span style={{ flex: 1, fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream)', minWidth: 120 }}>{d.name}</span>
+                            <select value={d.status} onChange={e => handleStatusChange(d.id, e.target.value)}
+                                style={{ ...fieldStyle, width: 'auto', padding: '8px 12px', cursor: 'pointer', flexShrink: 0 }}>
                                 <option value="upcoming" style={{ background: '#0e2218' }}>Geplant</option>
                                 <option value="next" style={{ background: '#0e2218' }}>Als nächstes</option>
                                 <option value="live" style={{ background: '#0e2218' }}>Läuft</option>
@@ -216,19 +203,17 @@ export function AdminPage() {
                     <div style={{ flex: 1, minWidth: 160 }}>
                         <label style={labelStyle}>Disziplin</label>
                         <select value={matchDisc} onChange={e => setMatchDisc(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
-                            {disciplines.map(d => (
-                                <option key={d.id} value={d.id} style={{ background: '#0e2218' }}>Spiel {d.number}: {d.name}</option>
-                            ))}
+                            {disciplines.map(d => <option key={d.id} value={d.id} style={{ background: '#0e2218' }}>Spiel {d.number}: {d.name}</option>)}
                         </select>
                     </div>
-                    <div>
+                    <div style={{ minWidth: 120 }}>
                         <label style={labelStyle}>Kategorie</label>
-                        <select value={matchGender} onChange={e => setMatchGender(e.target.value as 'm' | 'f')} style={{ ...fieldStyle, width: 'auto', padding: '10px 12px', cursor: 'pointer' }}>
+                        <select value={matchGender} onChange={e => setMatchGender(e.target.value as 'm' | 'f')} style={{ ...fieldStyle, cursor: 'pointer' }}>
                             <option value="m" style={{ background: '#0e2218' }}>♂ Männer</option>
                             <option value="f" style={{ background: '#0e2218' }}>♀ Frauen</option>
                         </select>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
                         <button onClick={handleLoadMatches} style={btnOutline}>Laden</button>
                         <button onClick={handleGenerateMatches} style={btnPrimary}>Neu generieren</button>
                     </div>
@@ -238,26 +223,25 @@ export function AdminPage() {
                     <>
                         <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden', marginBottom: 12 }}>
                             {matches.map((m, i) => (
-                                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)', flexWrap: 'wrap' }}>
-                                    <span style={{ flex: 1, fontSize: 15, color: m.winnerTeamId === m.teamAId ? 'var(--gold)' : 'var(--cream)' }}>{m.teamAName}</span>
-                                    <input
-                                        type="number"
-                                        placeholder="Pkt"
-                                        value={matchScores[m.id]?.a ?? (m.teamAScore !== null ? String(m.teamAScore) : '')}
-                                        onChange={e => setMatchScores(prev => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value } }))}
-                                        style={{ ...fieldStyle, width: 64, textAlign: 'center', padding: '6px 8px', fontSize: 14 }}
-                                    />
-                                    <span style={{ fontFamily: 'Cinzel, serif', color: 'var(--cream-dark)', opacity: .5 }}>vs</span>
-                                    <input
-                                        type="number"
-                                        placeholder="Pkt"
-                                        value={matchScores[m.id]?.b ?? (m.teamBScore !== null ? String(m.teamBScore) : '')}
-                                        onChange={e => setMatchScores(prev => ({ ...prev, [m.id]: { ...prev[m.id], b: e.target.value } }))}
-                                        style={{ ...fieldStyle, width: 64, textAlign: 'center', padding: '6px 8px', fontSize: 14 }}
-                                    />
-                                    <span style={{ flex: 1, fontSize: 15, color: m.winnerTeamId === m.teamBId ? 'var(--gold)' : 'var(--cream)', textAlign: 'right' }}>{m.teamBName}</span>
+                                <div key={m.id} style={{ padding: '12px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                                        <span style={{ flex: 1, fontSize: 15, color: m.winnerTeamId === m.teamAId ? 'var(--gold)' : 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.teamAName}</span>
+                                        <input type="number" placeholder="Pkt"
+                                            value={matchScores[m.id]?.a ?? (m.teamAScore !== null ? String(m.teamAScore) : '')}
+                                            onChange={e => setMatchScores(prev => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value } }))}
+                                            style={{ ...fieldStyle, width: 72, textAlign: 'center', padding: '6px 8px', fontSize: 14, flexShrink: 0 }}
+                                        />
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <span style={{ flex: 1, fontSize: 15, color: m.winnerTeamId === m.teamBId ? 'var(--gold)' : 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.teamBName}</span>
+                                        <input type="number" placeholder="Pkt"
+                                            value={matchScores[m.id]?.b ?? (m.teamBScore !== null ? String(m.teamBScore) : '')}
+                                            onChange={e => setMatchScores(prev => ({ ...prev, [m.id]: { ...prev[m.id], b: e.target.value } }))}
+                                            style={{ ...fieldStyle, width: 72, textAlign: 'center', padding: '6px 8px', fontSize: 14, flexShrink: 0 }}
+                                        />
+                                    </div>
                                     {m.isManualOverride && (
-                                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 9, letterSpacing: 1, color: 'var(--gold)', opacity: .5 }}>manuell</span>
+                                        <div style={{ fontFamily: 'Cinzel, serif', fontSize: 9, letterSpacing: 1, color: 'var(--gold)', opacity: .5, marginTop: 4 }}>manuell</div>
                                     )}
                                 </div>
                             ))}
@@ -272,27 +256,24 @@ export function AdminPage() {
             {/* Teams verwalten */}
             <div style={{ marginBottom: 48 }}>
                 <h3 style={sectionTitle}>Teams verwalten</h3>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                    <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 180 }}>
                         <label style={labelStyle}>Teamname</label>
-                        <input
-                            type="text"
-                            value={newTeamName}
-                            placeholder="Teamname eingeben"
+                        <input type="text" value={newTeamName} placeholder="Teamname eingeben"
                             onChange={e => setNewTeamName(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleAddTeam()}
                             style={fieldStyle}
                         />
                     </div>
-                    <div>
+                    <div style={{ minWidth: 120 }}>
                         <label style={labelStyle}>Kategorie</label>
-                        <select value={newTeamGender} onChange={e => setNewTeamGender(e.target.value as 'm' | 'f')} style={{ ...fieldStyle, width: 'auto', padding: '10px 12px', cursor: 'pointer' }}>
+                        <select value={newTeamGender} onChange={e => setNewTeamGender(e.target.value as 'm' | 'f')} style={{ ...fieldStyle, cursor: 'pointer' }}>
                             <option value="m" style={{ background: '#0e2218' }}>♂ Männer</option>
                             <option value="f" style={{ background: '#0e2218' }}>♀ Frauen</option>
                         </select>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                        <button onClick={handleAddTeam} style={btnPrimary}>+ Hinzufügen</button>
+                        <button onClick={handleAddTeam} style={{ ...btnPrimary, width: '100%' }}>+ Hinzufügen</button>
                     </div>
                 </div>
                 <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
@@ -300,11 +281,9 @@ export function AdminPage() {
                         <div style={{ padding: '30px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream-dark)', opacity: .4 }}>Keine Teams eingetragen</div>
                     ) : teams.map((t, i) => (
                         <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
-                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, padding: '2px 8px', borderRadius: 2, background: t.gender === 'm' ? 'rgba(30,80,200,.2)' : 'rgba(200,30,80,.2)', color: t.gender === 'm' ? '#7aadff' : '#ff8aaa', border: t.gender === 'm' ? '1px solid rgba(30,80,200,.3)' : '1px solid rgba(200,30,80,.3)' }}>
-                                {t.gender === 'm' ? '♂' : '♀'}
-                            </span>
-                            <span style={{ flex: 1, fontSize: 15, color: 'var(--cream)' }}>{t.name}</span>
-                            <button onClick={() => handleDeleteTeam(t.id)} style={{ background: 'none', border: '1px solid rgba(122,28,28,.4)', color: '#e07070', cursor: 'pointer', fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, padding: '4px 10px', borderRadius: 2 }}>
+                            <span style={genderBadge(t.gender)}>{t.gender === 'm' ? '♂' : '♀'}</span>
+                            <span style={{ flex: 1, fontSize: 15, color: 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
+                            <button onClick={() => handleDeleteTeam(t.id)} style={{ background: 'none', border: '1px solid rgba(122,28,28,.4)', color: '#e07070', cursor: 'pointer', fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, padding: '4px 10px', borderRadius: 2, flexShrink: 0 }}>
                                 Löschen
                             </button>
                         </div>
@@ -318,33 +297,25 @@ export function AdminPage() {
                 <div style={{ marginBottom: 16 }}>
                     <label style={labelStyle}>Disziplin</label>
                     <select value={selectedDisc} onChange={e => setSelectedDisc(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
-                        {disciplines.map(d => (
-                            <option key={d.id} value={d.id} style={{ background: '#0e2218' }}>Spiel {d.number}: {d.name}</option>
-                        ))}
+                        {disciplines.map(d => <option key={d.id} value={d.id} style={{ background: '#0e2218' }}>Spiel {d.number}: {d.name}</option>)}
                     </select>
                 </div>
                 <div style={{ border: '1px solid rgba(240,230,204,.1)', overflow: 'hidden', marginBottom: 16 }}>
                     {teams.length === 0 ? (
                         <div style={{ padding: '30px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream-dark)', opacity: .4 }}>Zuerst Teams hinzufügen</div>
                     ) : teams.map((t, i) => (
-                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
-                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, padding: '2px 8px', borderRadius: 2, background: t.gender === 'm' ? 'rgba(30,80,200,.2)' : 'rgba(200,30,80,.2)', color: t.gender === 'm' ? '#7aadff' : '#ff8aaa', border: t.gender === 'm' ? '1px solid rgba(30,80,200,.3)' : '1px solid rgba(200,30,80,.3)' }}>
-                                {t.gender === 'm' ? '♂' : '♀'}
-                            </span>
-                            <span style={{ flex: 1, fontSize: 15, color: 'var(--cream)' }}>{t.name}</span>
-                            <input
-                                type="text"
-                                placeholder="Wert (z.B. 12.34m)"
+                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)', flexWrap: 'wrap' }}>
+                            <span style={genderBadge(t.gender)}>{t.gender === 'm' ? '♂' : '♀'}</span>
+                            <span style={{ flex: 1, fontSize: 15, color: 'var(--cream)', minWidth: 100 }}>{t.name}</span>
+                            <input type="text" placeholder="Wert (z.B. 12.34m)"
                                 value={points[t.id]?.rawValue ?? ''}
                                 onChange={e => setPoints(prev => ({ ...prev, [t.id]: { ...prev[t.id], rawValue: e.target.value } }))}
-                                style={{ ...fieldStyle, width: 140, padding: '6px 10px', fontSize: 14 }}
+                                style={{ ...fieldStyle, width: 130, padding: '6px 10px', fontSize: 14, flexShrink: 0 }}
                             />
-                            <input
-                                type="number"
-                                placeholder="Pkt"
+                            <input type="number" placeholder="Pkt"
                                 value={points[t.id]?.points ?? ''}
                                 onChange={e => setPoints(prev => ({ ...prev, [t.id]: { ...prev[t.id], points: e.target.value } }))}
-                                style={{ ...fieldStyle, width: 70, textAlign: 'center', padding: '6px 10px', fontSize: 14 }}
+                                style={{ ...fieldStyle, width: 72, textAlign: 'center', padding: '6px 10px', fontSize: 14, flexShrink: 0 }}
                             />
                         </div>
                     ))}

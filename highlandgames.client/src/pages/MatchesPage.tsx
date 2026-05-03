@@ -29,7 +29,7 @@ export function MatchesPage() {
     const { disciplines } = useMatchesPage();
 
     return (
-        <div className="page-enter" style={{ padding: '60px 40px', width: '100%', maxWidth: 1200, margin: '0 auto', boxSizing: 'border-box' }}>
+        <div className="page-enter page-content" style={{ padding: '60px 40px', width: '100%', maxWidth: 1200, margin: '0 auto', boxSizing: 'border-box' }}>
             <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 5, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 10, display: 'block' }}>
                 Spielplan
             </span>
@@ -38,7 +38,7 @@ export function MatchesPage() {
             </h2>
             <Separator />
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(480px, 100%), 1fr))', gap: 16 }}>
                 {disciplines.map(d => {
                     const st = statusStyle[d.status] ?? statusStyle.upcoming;
 
