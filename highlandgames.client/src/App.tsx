@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { Header } from './components/Header';
+import { LiveBanner } from './components/LiveBanner';
 import { HomePage } from './pages/HomePage';
 import { ResultsPage } from './pages/ResultsPage';
 import { MatchesPage } from './pages/MatchesPage';
@@ -13,6 +14,7 @@ function App() {
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Header />
             <main style={{ paddingTop: 72, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <LiveBanner />
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/results" element={<ResultsPage />} />
