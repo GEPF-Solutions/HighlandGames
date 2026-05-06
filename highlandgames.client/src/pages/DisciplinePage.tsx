@@ -73,17 +73,8 @@ export function DisciplinePage() {
         joinGroup('JoinDiscipline', discId);
         joinGroup('JoinMatchesGroup', discId);
 
-        on('ResultUpdated', (data: unknown) => {
-            const result = data as ResultDto;
-            setResults(prev => {
-                const idx = prev.findIndex(r => r.id === result.id);
-                if (idx >= 0) {
-                    const updated = [...prev];
-                    updated[idx] = result;
-                    return updated;
-                }
-                return [...prev, result];
-            });
+        on('ResultUpdated', () => {
+            resultsApi.getByDiscipline(discId).then(setResults);
         });
 
         on('MatchesUpdated', () => loadMatches());

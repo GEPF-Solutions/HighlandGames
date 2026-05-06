@@ -167,6 +167,7 @@ export function AdminPage() {
     const [matchDeleteTarget, setMatchDeleteTarget] = useState<string | null>(null);
     const [matchModalOpen, setMatchModalOpen] = useState(false);
     const [matchResults, setMatchResults] = useState<ResultDto[]>([]);
+    const [leaderboardPoints, setLeaderboardPoints] = useState<Record<string, number>>({});
     const [newDiscName, setNewDiscName] = useState('');
     const [newDiscNumber, setNewDiscNumber] = useState('');
     const [newDiscDesc, setNewDiscDesc] = useState('');
@@ -274,11 +275,14 @@ export function AdminPage() {
     };
 
     const loadMatches = async (disc = matchDisc) => {
-        const [dataM, dataF, results] = await Promise.all([
+        const [dataM, dataF, results, lbM, lbF] = await Promise.all([
             getMatches(disc, 'm'),
             getMatches(disc, 'f'),
             resultsApi.getByDiscipline(disc),
+            resultsApi.getLeaderboard('m'),
+            resultsApi.getLeaderboard('f'),
         ]);
+        setLeaderboardPoints(Object.fromEntries([...lbM, ...lbF].map(e => [e.teamId, e.totalPoints])));
         setMatchesM(dataM);
         setMatchesF(dataF);
         setMatchResults(results);
@@ -688,9 +692,8 @@ export function AdminPage() {
                     {matchModalOpen && createPortal((() => {
                         const genderMatches = matchGender === 'm' ? matchesM : matchesF;
                         const usedTeamIds = new Set(genderMatches.flatMap(m => m.teamBId ? [m.teamAId, m.teamBId] : [m.teamAId]));
-                        const pointsById = Object.fromEntries(matchResults.map(r => [r.teamId, r.points]));
                         const sortedTeams = [...teams.filter(t => t.gender === matchGender)]
-                            .sort((a, b) => (pointsById[b.id] ?? -1) - (pointsById[a.id] ?? -1));
+                            .sort((a, b) => (leaderboardPoints[b.id] ?? -1) - (leaderboardPoints[a.id] ?? -1));
                         const closeModal = () => { setMatchModalOpen(false); setSelectedTeamA(null); };
                         return (
                             <div onClick={closeModal} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -711,7 +714,7 @@ export function AdminPage() {
                                         ) : sortedTeams.map((t, i) => {
                                             const isSelected = selectedTeamA === t.id;
                                             const isUsed = usedTeamIds.has(t.id);
-                                            const pts = pointsById[t.id];
+                                            const pts = leaderboardPoints[t.id];
                                             const btnAction: React.CSSProperties = {
                                                 padding: '6px 12px', borderRadius: 2, cursor: 'pointer', flexShrink: 0,
                                                 fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase',
