@@ -81,8 +81,13 @@ export function Header() {
                         <span className="header-badge-label" style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: isLive ? '#e07070' : 'var(--gold)', whiteSpace: 'nowrap' }}>
                             {isLive ? 'Live' : 'Als nächstes'}
                         </span>
-                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream)', whiteSpace: 'nowrap' }}>
-                            {disc?.icon} <span className="header-disc-name">{disc?.name}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream)', whiteSpace: 'nowrap' }}>
+                            {disc?.icon?.startsWith('/') ? (
+                                <img src={disc.icon} alt="" style={{ width: 20, height: 20, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />
+                            ) : disc?.icon ? (
+                                disc.icon
+                            ) : null}
+                            <span className="header-disc-name">{disc?.name}</span>
                         </span>
                     </div>
 

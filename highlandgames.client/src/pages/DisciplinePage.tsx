@@ -161,26 +161,31 @@ export function DisciplinePage() {
                 ← Alle Disziplinen
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 44 }}>{discipline.icon}</span>
-                <div>
-                    <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 5, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 4, display: 'block' }}>
-                        Spiel {discipline.number}
-                    </span>
-                    <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)' }}>
+            <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap' }}>
+                {discipline.icon?.startsWith('/') ? (
+                    <img src={discipline.icon} alt={discipline.name} style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
+                ) : discipline.icon ? (
+                    <span style={{ fontSize: 80, lineHeight: 1, flexShrink: 0 }}>{discipline.icon}</span>
+                ) : null}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 5, textTransform: 'uppercase', color: 'var(--gold)' }}>
+                            Spiel {discipline.number}
+                        </span>
+                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, padding: '3px 10px', borderRadius: 2, textTransform: 'uppercase', flexShrink: 0, ...style }}>
+                            {statusLabel[discipline.status]}
+                        </span>
+                    </div>
+                    <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)', marginBottom: discipline.description ? 12 : 0 }}>
                         {discipline.name}
                     </h2>
+                    {discipline.description && (
+                        <p style={{ fontSize: 17, lineHeight: 1.8, color: 'var(--cream-dark)', opacity: .8, margin: 0 }}>
+                            {discipline.description}
+                        </p>
+                    )}
                 </div>
-                <span style={{ marginLeft: 'auto', fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, padding: '3px 10px', borderRadius: 2, textTransform: 'uppercase', ...style }}>
-                    {statusLabel[discipline.status]}
-                </span>
             </div>
-
-            {discipline.description && (
-                <p style={{ fontSize: 17, lineHeight: 1.8, color: 'var(--cream-dark)', opacity: .8, marginBottom: 40, maxWidth: 600 }}>
-                    {discipline.description}
-                </p>
-            )}
 
             <Separator />
 

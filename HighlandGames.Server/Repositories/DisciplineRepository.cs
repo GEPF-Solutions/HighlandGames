@@ -18,8 +18,29 @@ public class DisciplineRepository(AppDbContext db) : IDisciplineRepository
     }
 
     public async Task UpdateAsync(Discipline discipline)
-    { 
+    {
         db.Disciplines.Update(discipline);
         await db.SaveChangesAsync();
+    }
+
+    public async Task<(byte[]? Data, string? ContentType)> GetImageAsync(string id)
+    {
+        var d = await db.Disciplines.Where(d => d.Id == id).Select(d => new { d.ImageData, d.ImageContentType }).FirstOrDefaultAsync();
+        return d is null ? (null, null) : (d.ImageData, d.ImageContentType);
+    }
+
+    public async Task CreateAsync(Discipline discipline)
+    {
+        db.Disciplines.Add(discipline);
+        await db.SaveChangesAsync();
+    }
+
+    public async Task<bool> DeleteAsync(string id)
+    {
+        var discipline = await db.Disciplines.FindAsync(id);
+        if (discipline is null) return false;
+        db.Disciplines.Remove(discipline);
+        await db.SaveChangesAsync();
+        return true;
     }
 }
