@@ -34,7 +34,9 @@ export function AdminPage() {
     const [newDiscImagePreview, setNewDiscImagePreview] = useState<string | null>(null);
     const [discSaving, setDiscSaving] = useState(false);
     const [discModalOpen, setDiscModalOpen] = useState(false);
-    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+    const [teamModalOpen, setTeamModalOpen] = useState(false);
+    const [teamAdded, setTeamAdded] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; type: 'discipline' | 'team' } | null>(null);
 
     useEffect(() => {
         if (!loggedIn) return;
@@ -54,6 +56,8 @@ export function AdminPage() {
         if (!newTeamName.trim()) return;
         await teamsApi.create({ name: newTeamName.trim(), gender: newTeamGender });
         setNewTeamName('');
+        setTeamAdded(true);
+        setTimeout(() => setTeamAdded(false), 1800);
         loadTeams();
     };
 
@@ -223,15 +227,15 @@ export function AdminPage() {
 
     const tabs: { id: AdminTab; label: string }[] = [
         { id: 'disciplines', label: 'Disziplinen' },
-        { id: 'matches', label: 'Begegnungen' },
         { id: 'teams', label: 'Teams' },
+        { id: 'matches', label: 'Begegnungen' },
         { id: 'results', label: 'Ergebnisse' },
     ];
 
     const tabBar = (
         <>
             {/* Desktop */}
-            <div className="tabs-desktop" style={{ display: 'flex', marginBottom: 32, borderBottom: '1px solid rgba(201,148,58,.2)', overflowX: 'auto' }}>
+            <div className="tabs-desktop" style={{ display: 'flex', marginBottom: 32, borderBottom: '1px solid rgba(201,148,58,.2)' }}>
                 {tabs.map(t => (
                     <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
                         fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2,
@@ -359,7 +363,7 @@ export function AdminPage() {
                                 )}
                                 <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, color: 'var(--gold)', opacity: .6, width: 20, flexShrink: 0 }}>{d.number}</span>
                                 <span style={{ fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream)' }}>{d.name}</span>
-                                <button onClick={() => setDeleteTarget({ id: d.id, name: d.name })} style={{ background: 'none', border: 'none', color: 'var(--cream-dark)', opacity: .3, cursor: 'pointer', padding: '4px', flexShrink: 0, lineHeight: 0, transition: 'opacity .15s' }}
+                                <button onClick={() => setDeleteTarget({ id: d.id, name: d.name, type: 'discipline' })} style={{ background: 'none', border: 'none', color: 'var(--cream-dark)', opacity: .3, cursor: 'pointer', padding: '4px', flexShrink: 0, lineHeight: 0, transition: 'opacity .15s' }}
                                     onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
                                     onMouseLeave={e => (e.currentTarget.style.opacity = '.3')}>
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e07070" strokeWidth="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -439,38 +443,79 @@ export function AdminPage() {
             {/* Teams verwalten */}
             {activeTab === 'teams' && (
                 <div>
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-                        <div style={{ flex: 1, minWidth: 180 }}>
-                            <label style={labelStyle}>Teamname</label>
-                            <input type="text" value={newTeamName} placeholder="Teamname eingeben"
-                                onChange={e => setNewTeamName(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleAddTeam()}
-                                style={fieldStyle}
-                            />
-                        </div>
-                        <div style={{ minWidth: 120 }}>
-                            <label style={labelStyle}>Kategorie</label>
-                            <select value={newTeamGender} onChange={e => setNewTeamGender(e.target.value as 'm' | 'f')} style={{ ...selectStyle, width: '100%' }}>
-                                <option value="m" style={{ background: '#0e2218' }}>♂ Männer</option>
-                                <option value="f" style={{ background: '#0e2218' }}>♀ Frauen</option>
-                            </select>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                            <button onClick={handleAddTeam} style={{ ...btnPrimary, width: '100%' }}>+ Hinzufügen</button>
-                        </div>
-                    </div>
-                    <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
-                        {teams.length === 0 ? (
-                            <div style={{ padding: '30px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream-dark)', opacity: .4 }}>Keine Teams eingetragen</div>
-                        ) : teams.map((t, i) => (
-                            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
-                                <span style={genderBadge(t.gender)}>{t.gender === 'm' ? '♂' : '♀'}</span>
-                                <span style={{ flex: 1, fontSize: 15, color: 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
-                                <button onClick={() => handleDeleteTeam(t.id)} style={{ background: 'none', border: '1px solid rgba(122,28,28,.4)', color: '#e07070', cursor: 'pointer', fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, padding: '4px 10px', borderRadius: 2, flexShrink: 0 }}>
-                                    Löschen
-                                </button>
+                    {/* Modal */}
+                    {teamModalOpen && createPortal(
+                        <div onClick={() => setTeamModalOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+                            <div onClick={e => e.stopPropagation()} style={{ background: 'var(--green-dark)', border: '1px solid rgba(201,148,58,.3)', padding: 32, borderRadius: 2, width: '100%', maxWidth: 400 }}>
+                                <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 24 }}>Team hinzufügen</div>
+                                <div style={{ marginBottom: 16 }}>
+                                    <label style={labelStyle}>Name</label>
+                                    <input type="text" value={newTeamName} autoFocus
+                                        onChange={e => setNewTeamName(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && handleAddTeam()}
+                                        style={fieldStyle}
+                                    />
+                                </div>
+                                <div style={{ marginBottom: 24 }}>
+                                    <label style={labelStyle}>Kategorie</label>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        {(['m', 'f'] as const).map(g => (
+                                            <button key={g} onClick={() => setNewTeamGender(g)} style={{
+                                                flex: 1, padding: '10px', borderRadius: 2, cursor: 'pointer',
+                                                fontFamily: 'Cinzel, serif', fontSize: 12, letterSpacing: 1,
+                                                border: newTeamGender === g ? '1px solid rgba(201,148,58,.6)' : '1px solid rgba(240,230,204,.15)',
+                                                background: newTeamGender === g ? 'rgba(201,148,58,.15)' : 'transparent',
+                                                color: newTeamGender === g ? 'var(--gold)' : 'var(--cream-dark)',
+                                                transition: 'all .15s',
+                                            }}>
+                                                {g === 'm' ? '♂ Männer' : '♀ Frauen'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <button onClick={() => setTeamModalOpen(false)} style={{ ...btnOutline }}>Schließen</button>
+                                    <button onClick={handleAddTeam} disabled={!newTeamName.trim()} style={{ ...btnPrimary, flex: 1, opacity: !newTeamName.trim() ? 0.5 : 1, background: teamAdded ? 'var(--green-light)' : 'var(--gold)', transition: 'background .3s' }}>
+                                        {teamAdded ? '✓ Hinzugefügt' : '+ Hinzufügen'}
+                                    </button>
+                                </div>
                             </div>
-                        ))}
+                        </div>,
+                        document.body
+                    )}
+
+                    {/* Toolbar */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                        <button onClick={() => setTeamModalOpen(true)} style={btnPrimary}>+ Team hinzufügen</button>
+                    </div>
+
+                    {/* Teams nach Kategorie */}
+                    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                    {(['m', 'f'] as const).map(g => {
+                        const gTeams = teams.filter(t => t.gender === g);
+                        return (
+                            <div key={g} style={{ flex: '1 1 280px', minWidth: 0 }}>
+                                <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: g === 'm' ? '#7aadff' : '#ff8aaa', marginBottom: 10 }}>
+                                    {g === 'm' ? '♂ Männer' : '♀ Frauen'} <span style={{ opacity: .5 }}>({gTeams.length})</span>
+                                </div>
+                                <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
+                                    {gTeams.length === 0 ? (
+                                        <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 12, color: 'var(--cream-dark)', opacity: .3 }}>Keine Teams</div>
+                                    ) : gTeams.map((t, i) => (
+                                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: i < gTeams.length - 1 ? '1px solid rgba(240,230,204,.07)' : 'none', background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
+                                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, color: 'var(--gold)', opacity: .4, width: 20, flexShrink: 0 }}>{i + 1}</span>
+                                            <span style={{ flex: 1, fontSize: 15, color: 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
+                                            <button onClick={() => setDeleteTarget({ id: t.id, name: t.name, type: 'team' })} style={{ background: 'none', border: 'none', color: 'var(--cream-dark)', opacity: .3, cursor: 'pointer', padding: '4px', flexShrink: 0, lineHeight: 0, transition: 'opacity .15s' }}
+                                                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                                                onMouseLeave={e => (e.currentTarget.style.opacity = '.3')}>
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e07070" strokeWidth="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
                     </div>
                 </div>
             )}
@@ -516,7 +561,7 @@ export function AdminPage() {
             {deleteTarget && (
                 <ConfirmModal
                     message={`"${deleteTarget.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
-                    onConfirm={() => { handleDeleteDiscipline(deleteTarget.id); setDeleteTarget(null); }}
+                    onConfirm={() => { deleteTarget.type === 'team' ? handleDeleteTeam(deleteTarget.id) : handleDeleteDiscipline(deleteTarget.id); setDeleteTarget(null); }}
                     onCancel={() => setDeleteTarget(null)}
                 />
             )}
