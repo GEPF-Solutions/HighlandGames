@@ -1,4 +1,4 @@
-﻿using HighlandGames.Server.DTOs;
+using HighlandGames.Server.DTOs;
 using HighlandGames.Server.Hubs;
 using HighlandGames.Server.Models;
 using HighlandGames.Server.Repositories.Abstractions;
@@ -12,15 +12,16 @@ public class DisciplineService(IDisciplineRepository disciplineRepository, IHubC
     private static string? ImageUrl(Discipline d) =>
         d.ImageData is not null ? $"/api/disciplines/{d.Id}/image" : null;
 
+    private static DisciplineDto ToDto(Discipline d) =>
+        new(d.Id, d.Number, d.Name, ImageUrl(d), d.Description, d.Status, d.MeasurementType);
+
     public async Task<IEnumerable<DisciplineDto>> GetAllAsync()
-    {
-        return (await disciplineRepository.GetAllAsync()).Select(d => new DisciplineDto(d.Id, d.Number, d.Name, ImageUrl(d), d.Description, d.Status));
-    }
+        => (await disciplineRepository.GetAllAsync()).Select(ToDto);
 
     public async Task<DisciplineDto?> GetByIdAsync(string id)
     {
-        var discipline = await disciplineRepository.GetByIdAsync(id);
-        return discipline is null ? null : new DisciplineDto(discipline.Id, discipline.Number, discipline.Name, ImageUrl(discipline), discipline.Description, discipline.Status);
+        var d = await disciplineRepository.GetByIdAsync(id);
+        return d is null ? null : ToDto(d);
     }
 
     public Task<(byte[]? Data, string? ContentType)> GetImageAsync(string id) =>
@@ -29,15 +30,12 @@ public class DisciplineService(IDisciplineRepository disciplineRepository, IHubC
     public async Task<bool> UpdateStatusAsync(string id, UpdateDisciplineStatusDto dto)
     {
         var discipline = await disciplineRepository.GetByIdAsync(id);
-
         if (discipline is null) return false;
 
         discipline.Status = dto.Status;
         await disciplineRepository.UpdateAsync(discipline);
 
-        var updated = new DisciplineDto(discipline.Id, discipline.Number, discipline.Name, ImageUrl(discipline), discipline.Description, discipline.Status);
-        await hubContext.Clients.All.SendAsync("DisciplineStatusChanged", updated);
-
+        await hubContext.Clients.All.SendAsync("DisciplineStatusChanged", ToDto(discipline));
         return true;
     }
 
@@ -60,14 +58,13 @@ public class DisciplineService(IDisciplineRepository disciplineRepository, IHubC
             ImageData = imageData,
             ImageContentType = imageContentType,
             Status = "upcoming",
+            MeasurementType = request.MeasurementType,
         };
 
         await disciplineRepository.CreateAsync(discipline);
-        return new DisciplineDto(discipline.Id, discipline.Number, discipline.Name, ImageUrl(discipline), discipline.Description, discipline.Status);
+        return ToDto(discipline);
     }
 
-    public async Task<bool> DeleteAsync(string id)
-    {
-        return await disciplineRepository.DeleteAsync(id);
-    }
+    public async Task<bool> DeleteAsync(string id) =>
+        await disciplineRepository.DeleteAsync(id);
 }

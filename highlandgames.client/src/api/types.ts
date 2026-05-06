@@ -7,6 +7,8 @@ export interface TeamDto {
     gender: Gender;
 }
 
+export type MeasurementType = 'time' | 'distance' | 'duel' | 'none';
+
 export interface DisciplineDto {
     id: string;
     number: number;
@@ -14,6 +16,7 @@ export interface DisciplineDto {
     icon?: string;
     description?: string;
     status: DisciplineStatus;
+    measurementType: MeasurementType;
 }
 
 export interface ResultDto {
@@ -50,10 +53,11 @@ export interface MatchDto {
     id: string;
     disciplineId: string;
     gender: Gender;
+    order: number;
     teamAId: string;
     teamAName: string;
-    teamBId: string;
-    teamBName: string;
+    teamBId: string | null;
+    teamBName: string | null;
     teamAScore: number | null;
     teamBScore: number | null;
     winnerTeamId: string | null;

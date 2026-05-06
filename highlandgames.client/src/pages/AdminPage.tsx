@@ -1,15 +1,151 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import type { TeamDto, DisciplineDto, MatchDto } from '../api/types';
+import {
+    DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+    type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import type { TeamDto, DisciplineDto, MatchDto, ResultDto, MeasurementType } from '../api/types';
 import { teamsApi } from '../api/teamsApi';
 import { disciplinesApi } from '../api/disciplinesApi';
 import { resultsApi } from '../api/resultsApi';
-import { getMatches, generateMatches, updateMatch } from '../api/matches';
+import { getMatches, createMatch, updateMatch, deleteMatch, reorderMatches } from '../api/matches';
 import { useAuth } from '../hooks/useAuth';
 import { Separator } from '../components/Separator';
 import { ConfirmModal } from '../components/ConfirmModal';
 
 type AdminTab = 'disciplines' | 'matches' | 'teams' | 'results';
+
+function parseRawValue(v: string): number {
+    if (!v) return Infinity;
+    if (v.includes(':')) {
+        const [min, sec] = v.split(':');
+        return parseInt(min) * 60 + parseFloat(sec || '0');
+    }
+    return parseFloat(v.replace(/[^0-9.]/g, '')) || 0;
+}
+
+interface SortableMatchRowProps {
+    match: MatchDto;
+    measurementType: MeasurementType;
+    valueA: string;
+    valueB: string;
+    onValueAChange: (v: string) => void;
+    onValueBChange: (v: string) => void;
+    onSaveScore: () => void;
+    onSaveMeasurement: (teamId: string, rawValue: string) => void;
+    onSetWinner: (winnerId: string | null) => void;
+    onDelete: () => void;
+    fieldStyle: React.CSSProperties;
+}
+
+function SortableMatchRow({ match: m, measurementType, valueA, valueB, onValueAChange, onValueBChange, onSaveScore, onSaveMeasurement, onSetWinner, onDelete, fieldStyle }: SortableMatchRowProps) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: m.id });
+    const rowStyle: React.CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+        borderBottom: '1px solid rgba(240,230,204,.07)',
+        background: isDragging ? 'rgba(201,148,58,.06)' : 'transparent',
+    };
+
+    const measurePlaceholder = measurementType === 'time' ? '0:00.0' : '0.00';
+    const measureInput = (value: string, onChange: (v: string) => void, teamId: string) => (
+        <input type="text" placeholder={measurePlaceholder}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            onBlur={() => onSaveMeasurement(teamId, value)}
+            style={{ ...fieldStyle, width: 90, textAlign: 'center', padding: '4px 6px', fontSize: 12, flexShrink: 0 }}
+        />
+    );
+
+    const winnerBtn = (label: string, teamId: string) => {
+        const isWinner = m.winnerTeamId === teamId;
+        return (
+            <button onClick={() => onSetWinner(isWinner ? null : teamId)} style={{
+                fontFamily: 'Cinzel, serif', fontSize: 9, letterSpacing: 1, textTransform: 'uppercase',
+                padding: '3px 8px', borderRadius: 2, cursor: 'pointer', flexShrink: 0,
+                border: isWinner ? '1px solid rgba(201,148,58,.5)' : '1px solid rgba(240,230,204,.15)',
+                background: isWinner ? 'rgba(201,148,58,.15)' : 'transparent',
+                color: isWinner ? 'var(--gold)' : 'var(--cream-dark)',
+                transition: 'all .15s',
+            }}>{label}</button>
+        );
+    };
+
+    const teamNameStyle = (teamId: string): React.CSSProperties => ({
+        flex: 1, fontSize: 13, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        color: m.winnerTeamId === teamId ? 'var(--gold)' : 'var(--cream)',
+    });
+
+    return (
+        <div ref={setNodeRef} style={rowStyle}>
+            <div {...attributes} {...listeners} style={{ cursor: 'grab', color: 'var(--cream-dark)', opacity: .3, flexShrink: 0, padding: '2px 4px', lineHeight: 0 }}>
+                <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+                    <circle cx="4" cy="3" r="1.5"/><circle cx="8" cy="3" r="1.5"/>
+                    <circle cx="4" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/>
+                    <circle cx="4" cy="13" r="1.5"/><circle cx="8" cy="13" r="1.5"/>
+                </svg>
+            </div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+                {measurementType === 'duel' ? (
+                    m.teamBId ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={teamNameStyle(m.teamAId)}>{m.teamAName}</span>
+                            {winnerBtn('← Sieger', m.teamAId)}
+                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, color: 'var(--cream-dark)', opacity: .3 }}>vs</span>
+                            {winnerBtn('Sieger →', m.teamBId)}
+                            <span style={{ ...teamNameStyle(m.teamBId), textAlign: 'right' }}>{m.teamBName}</span>
+                        </div>
+                    ) : (
+                        <span style={{ fontSize: 13, color: 'var(--cream)' }}>{m.teamAName}</span>
+                    )
+                ) : measurementType === 'time' || measurementType === 'distance' ? (
+                    m.teamBId ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={teamNameStyle(m.teamAId)}>{m.teamAName}</span>
+                            {measureInput(valueA, onValueAChange, m.teamAId)}
+                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, color: 'var(--cream-dark)', opacity: .3 }}>vs</span>
+                            {measureInput(valueB, onValueBChange, m.teamBId)}
+                            <span style={{ ...teamNameStyle(m.teamBId), textAlign: 'right' }}>{m.teamBName}</span>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ flex: 1, fontSize: 13, color: 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.teamAName}</span>
+                            {measureInput(valueA, onValueAChange, m.teamAId)}
+                        </div>
+                    )
+                ) : (
+                    m.teamBId ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={teamNameStyle(m.teamAId)}>{m.teamAName}</span>
+                            <input type="number" placeholder="–" value={valueA} onChange={e => onValueAChange(e.target.value)} onBlur={onSaveScore} style={{ ...fieldStyle, width: 52, textAlign: 'center', padding: '4px 6px', fontSize: 13, flexShrink: 0 }} />
+                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, color: 'var(--cream-dark)', opacity: .5 }}>:</span>
+                            <input type="number" placeholder="–" value={valueB} onChange={e => onValueBChange(e.target.value)} onBlur={onSaveScore} style={{ ...fieldStyle, width: 52, textAlign: 'center', padding: '4px 6px', fontSize: 13, flexShrink: 0 }} />
+                            <span style={{ ...teamNameStyle(m.teamBId), textAlign: 'right' }}>{m.teamBName}</span>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ flex: 1, fontSize: 13, color: 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.teamAName}</span>
+                            <input type="number" placeholder="–" value={valueA} onChange={e => onValueAChange(e.target.value)} onBlur={onSaveScore} style={{ ...fieldStyle, width: 72, textAlign: 'center', padding: '4px 6px', fontSize: 13, flexShrink: 0 }} />
+                        </div>
+                    )
+                )}
+            </div>
+
+            <button onClick={onDelete} style={{ background: 'none', border: 'none', color: 'var(--cream-dark)', opacity: .3, cursor: 'pointer', padding: 4, flexShrink: 0, lineHeight: 0, transition: 'opacity .15s' }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '.3')}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e07070" strokeWidth="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+        </div>
+    );
+}
 
 export function AdminPage() {
     const { loggedIn, error, loading, login, logout } = useAuth();
@@ -21,15 +157,20 @@ export function AdminPage() {
     const [newTeamGender, setNewTeamGender] = useState<'m' | 'f'>('m');
     const [selectedDisc, setSelectedDisc] = useState('');
     const [points, setPoints] = useState<Record<string, { points: string; rawValue: string }>>({});
-    const [saved, setSaved] = useState(false);
     const [matchDisc, setMatchDisc] = useState('');
     const [matchGender, setMatchGender] = useState<'m' | 'f'>('m');
-    const [matches, setMatches] = useState<MatchDto[]>([]);
+    const [matchesM, setMatchesM] = useState<MatchDto[]>([]);
+    const [matchesF, setMatchesF] = useState<MatchDto[]>([]);
     const [matchScores, setMatchScores] = useState<Record<string, { a: string; b: string }>>({});
     const [matchSaved, setMatchSaved] = useState(false);
+    const [selectedTeamA, setSelectedTeamA] = useState<string | null>(null);
+    const [matchDeleteTarget, setMatchDeleteTarget] = useState<string | null>(null);
+    const [matchModalOpen, setMatchModalOpen] = useState(false);
+    const [matchResults, setMatchResults] = useState<ResultDto[]>([]);
     const [newDiscName, setNewDiscName] = useState('');
     const [newDiscNumber, setNewDiscNumber] = useState('');
     const [newDiscDesc, setNewDiscDesc] = useState('');
+    const [newDiscMeasurementType, setNewDiscMeasurementType] = useState<MeasurementType>('none');
     const [newDiscImage, setNewDiscImage] = useState<File | null>(null);
     const [newDiscImagePreview, setNewDiscImagePreview] = useState<string | null>(null);
     const [discSaving, setDiscSaving] = useState(false);
@@ -37,6 +178,8 @@ export function AdminPage() {
     const [teamModalOpen, setTeamModalOpen] = useState(false);
     const [teamAdded, setTeamAdded] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; type: 'discipline' | 'team' } | null>(null);
+
+    const dndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
     useEffect(() => {
         if (!loggedIn) return;
@@ -46,6 +189,19 @@ export function AdminPage() {
         });
         loadTeams();
     }, [loggedIn]);
+
+    useEffect(() => {
+        if (activeTab === 'matches' && matchDisc) {
+            loadMatches(matchDisc);
+        }
+    }, [activeTab, matchDisc]);
+
+    useEffect(() => {
+        if (!loggedIn || !selectedDisc) return;
+        resultsApi.getByDiscipline(selectedDisc).then(results => {
+            setPoints(Object.fromEntries(results.map(r => [r.teamId, { points: String(r.points), rawValue: r.rawValue ?? '' }])));
+        });
+    }, [selectedDisc, loggedIn, activeTab]);
 
     const loadTeams = async () => {
         const [m, f] = await Promise.all([teamsApi.getByGender('m'), teamsApi.getByGender('f')]);
@@ -66,13 +222,10 @@ export function AdminPage() {
         loadTeams();
     };
 
-    const handleSaveResults = async () => {
-        const entries = Object.entries(points).filter(([, v]) => v.points !== '');
-        await Promise.all(entries.map(([teamId, v]) =>
-            resultsApi.upsert({ teamId, disciplineId: selectedDisc, points: parseInt(v.points), rawValue: v.rawValue || undefined })
-        ));
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2200);
+    const handleSavePoint = async (teamId: string) => {
+        const v = points[teamId];
+        const pts = parseInt(v?.points ?? '0') || 0;
+        await resultsApi.upsert({ teamId, disciplineId: selectedDisc, points: pts, rawValue: v?.rawValue || undefined });
     };
 
     const handleStatusChange = async (id: string, status: string) => {
@@ -99,12 +252,14 @@ export function AdminPage() {
                 newDiscName.trim(),
                 parseInt(newDiscNumber),
                 newDiscDesc.trim() || undefined,
+                newDiscMeasurementType,
                 newDiscImage,
             );
             setDisciplines(prev => [...prev, dto].sort((a, b) => a.number - b.number));
             setNewDiscName('');
             setNewDiscNumber('');
             setNewDiscDesc('');
+            setNewDiscMeasurementType('none');
             setNewDiscImage(null);
             setNewDiscImagePreview(null);
             setDiscModalOpen(false);
@@ -118,34 +273,144 @@ export function AdminPage() {
         setDisciplines(prev => prev.filter(d => d.id !== id));
     };
 
-    const handleLoadMatches = async () => {
-        const data = await getMatches(matchDisc, matchGender);
-        setMatches(data);
-        setMatchScores({});
+    const loadMatches = async (disc = matchDisc) => {
+        const [dataM, dataF, results] = await Promise.all([
+            getMatches(disc, 'm'),
+            getMatches(disc, 'f'),
+            resultsApi.getByDiscipline(disc),
+        ]);
+        setMatchesM(dataM);
+        setMatchesF(dataF);
+        setMatchResults(results);
+
+        const initialScores: Record<string, { a: string; b: string }> = {};
+        for (const m of [...dataM, ...dataF]) {
+            const rA = results.find(r => r.teamId === m.teamAId);
+            const rB = m.teamBId ? results.find(r => r.teamId === m.teamBId) : undefined;
+            initialScores[m.id] = {
+                a: rA?.rawValue ?? (m.teamAScore !== null ? String(m.teamAScore) : ''),
+                b: rB?.rawValue ?? (m.teamBScore !== null ? String(m.teamBScore) : ''),
+            };
+        }
+        setMatchScores(initialScores);
+        setSelectedTeamA(null);
     };
 
-    const handleGenerateMatches = async () => {
-        await generateMatches(matchDisc, matchGender);
-        const data = await getMatches(matchDisc, matchGender);
-        setMatches(data);
-        setMatchScores({});
+    const handleTeamClick = async (teamId: string) => {
+        if (!matchDisc) return;
+        if (selectedTeamA === null) {
+            setSelectedTeamA(teamId);
+        } else if (selectedTeamA === teamId) {
+            setSelectedTeamA(null);
+        } else {
+            await createMatch(matchDisc, matchGender, selectedTeamA, teamId);
+            setSelectedTeamA(null);
+            await loadMatches();
+        }
     };
 
-    const handleSaveMatches = async () => {
-        await Promise.all(
-            Object.entries(matchScores).map(([id, v]) => {
-                const match = matches.find(m => m.id === id);
-                if (!match) return Promise.resolve();
-                const aScore = v.a !== '' ? parseInt(v.a) : null;
-                const bScore = v.b !== '' ? parseInt(v.b) : null;
-                const winnerId = aScore !== null && bScore !== null
-                    ? (aScore > bScore ? match.teamAId : match.teamBId) : null;
-                return updateMatch(id, { teamAScore: aScore, teamBScore: bScore, winnerTeamId: winnerId });
-            })
-        );
+    const handleAddIndividual = async (teamId: string) => {
+        if (!matchDisc) return;
+        await createMatch(matchDisc, matchGender, teamId, null);
+        await loadMatches();
+    };
+
+    const handleDeleteMatch = async (id: string) => {
+        await deleteMatch(id);
+        setMatchesM(prev => prev.filter(m => m.id !== id));
+        setMatchesF(prev => prev.filter(m => m.id !== id));
+        setMatchDeleteTarget(null);
+    };
+
+    const updateMatchInState = (updated: MatchDto) => {
+        setMatchesM(prev => prev.map(m => m.id === updated.id ? updated : m));
+        setMatchesF(prev => prev.map(m => m.id === updated.id ? updated : m));
+    };
+
+
+    const handleSaveMeasurement = async (matchId: string, teamId: string, rawValue: string) => {
+        if (!rawValue.trim()) {
+            const existing = matchResults.find(r => r.teamId === teamId && r.disciplineId === matchDisc);
+            if (existing) await resultsApi.delete(existing.id);
+        } else {
+            await resultsApi.upsert({ teamId, disciplineId: matchDisc, points: 0, rawValue });
+        }
+        const results = await resultsApi.getByDiscipline(matchDisc);
+        setMatchResults(results);
+        if (matchDisc === selectedDisc) {
+            setPoints(Object.fromEntries(results.map(r => [r.teamId, { points: String(r.points), rawValue: r.rawValue ?? '' }])));
+        }
+        if (!rawValue.trim()) return;
+
+        const match = [...matchesM, ...matchesF].find(m => m.id === matchId);
+        if (match?.teamBId) {
+            const scores = matchScores[matchId] ?? { a: '', b: '' };
+            const currentA = teamId === match.teamAId ? rawValue : scores.a;
+            const currentB = teamId === match.teamBId ? rawValue : scores.b;
+            if (currentA && currentB) {
+                const pA = parseRawValue(currentA), pB = parseRawValue(currentB);
+                const disc = disciplines.find(d => d.id === matchDisc);
+                let winnerId: string | null = null;
+                if (disc?.measurementType === 'time') winnerId = pA < pB ? match.teamAId : match.teamBId;
+                else if (disc?.measurementType === 'distance') winnerId = pA > pB ? match.teamAId : match.teamBId;
+                if (winnerId) {
+                    const updated = await updateMatch(matchId, { winnerTeamId: winnerId });
+                    updateMatchInState(updated);
+                }
+            }
+        }
+    };
+
+    const handleSetWinner = async (matchId: string, winnerId: string | null) => {
+        const match = [...matchesM, ...matchesF].find(m => m.id === matchId);
+        const updated = await updateMatch(matchId, { winnerTeamId: winnerId });
+        updateMatchInState(updated);
+
+        const disc = disciplines.find(d => d.id === matchDisc);
+        if (disc?.measurementType === 'duel' && match) {
+            if (winnerId) {
+                const loserId = winnerId === match.teamAId ? match.teamBId : match.teamAId;
+                await resultsApi.upsert({ teamId: winnerId, disciplineId: matchDisc, points: 0, rawValue: 'Sieg' });
+                if (loserId) await resultsApi.upsert({ teamId: loserId, disciplineId: matchDisc, points: 0, rawValue: 'Niederlage' });
+            } else {
+                const toDelete = matchResults.filter(r => r.teamId === match.teamAId || r.teamId === match.teamBId);
+                await Promise.all(toDelete.map(r => resultsApi.delete(r.id)));
+            }
+            const results = await resultsApi.getByDiscipline(matchDisc);
+            setMatchResults(results);
+            if (matchDisc === selectedDisc)
+                setPoints(Object.fromEntries(results.map(r => [r.teamId, { points: String(r.points), rawValue: r.rawValue ?? '' }])));
+        }
+    };
+
+    const handleSaveMatchScore = async (id: string) => {
+        const v = matchScores[id];
+        if (!v) return;
+        const match = [...matchesM, ...matchesF].find(m => m.id === id);
+        if (!match) return;
+        const aScore = v.a !== '' ? parseInt(v.a) : null;
+        const bScore = v.b !== '' ? parseInt(v.b) : null;
+        let winnerId: string | null = null;
+        if (aScore !== null && bScore !== null && match.teamBId) {
+            winnerId = aScore > bScore ? match.teamAId : match.teamBId;
+        }
+        const updated = await updateMatch(id, { teamAScore: aScore, teamBScore: bScore, winnerTeamId: winnerId });
+        updateMatchInState(updated);
+        setMatchScores(prev => { const next = { ...prev }; delete next[id]; return next; });
         setMatchSaved(true);
-        handleLoadMatches();
-        setTimeout(() => setMatchSaved(false), 2200);
+        setTimeout(() => setMatchSaved(false), 1800);
+    };
+
+    const handleDragEnd = async (event: DragEndEvent, gender: 'm' | 'f') => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+        const gMatches = gender === 'm' ? matchesM : matchesF;
+        const setGMatches = gender === 'm' ? setMatchesM : setMatchesF;
+        const oldIndex = gMatches.findIndex(m => m.id === active.id);
+        const newIndex = gMatches.findIndex(m => m.id === over.id);
+        const reordered = arrayMove(gMatches, oldIndex, newIndex);
+        setGMatches(reordered);
+        await reorderMatches(matchDisc, gender, reordered.map(m => m.id));
     };
 
     const fieldStyle = {
@@ -183,13 +448,6 @@ export function AdminPage() {
         background: 'transparent', color: 'var(--cream-dark)', whiteSpace: 'nowrap' as const,
     };
 
-    const genderBadge = (gender: string) => ({
-        fontFamily: 'Cinzel, serif', fontSize: 10, padding: '2px 8px', borderRadius: 2,
-        background: gender === 'm' ? 'rgba(30,80,200,.2)' : 'rgba(200,30,80,.2)',
-        color: gender === 'm' ? '#7aadff' : '#ff8aaa',
-        border: gender === 'm' ? '1px solid rgba(30,80,200,.3)' : '1px solid rgba(200,30,80,.3)',
-        flexShrink: 0 as const,
-    });
 
     if (!loggedIn) {
         return (
@@ -303,6 +561,21 @@ export function AdminPage() {
                                         />
                                     </div>
                                 </div>
+                                <div style={{ marginBottom: 16 }}>
+                                    <label style={labelStyle}>Messung</label>
+                                    <div style={{ display: 'flex', gap: 6 }}>
+                                        {([['none', 'Keine'], ['time', 'Zeit'], ['distance', 'Distanz'], ['duel', 'Duell']] as [MeasurementType, string][]).map(([val, label]) => (
+                                            <button key={val} onClick={() => setNewDiscMeasurementType(val)} style={{
+                                                flex: 1, padding: '8px 4px', borderRadius: 2, cursor: 'pointer',
+                                                fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1,
+                                                border: newDiscMeasurementType === val ? '1px solid rgba(201,148,58,.6)' : '1px solid rgba(240,230,204,.15)',
+                                                background: newDiscMeasurementType === val ? 'rgba(201,148,58,.15)' : 'transparent',
+                                                color: newDiscMeasurementType === val ? 'var(--gold)' : 'var(--cream-dark)',
+                                                transition: 'all .15s',
+                                            }}>{label}</button>
+                                        ))}
+                                    </div>
+                                </div>
                                 <div style={{ display: 'flex', gap: 16, marginBottom: 24, alignItems: 'flex-start' }}>
                                     <div style={{ flex: 1 }}>
                                         <label style={labelStyle}>Beschreibung</label>
@@ -363,6 +636,11 @@ export function AdminPage() {
                                 )}
                                 <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, color: 'var(--gold)', opacity: .6, width: 20, flexShrink: 0 }}>{d.number}</span>
                                 <span style={{ fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream)' }}>{d.name}</span>
+                                {d.measurementType !== 'none' && (
+                                    <span style={{ fontFamily: 'Cinzel, serif', fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 2, flexShrink: 0, background: 'rgba(240,230,204,.06)', border: '1px solid rgba(240,230,204,.12)', color: 'var(--cream-dark)', opacity: .6 }}>
+                                        {d.measurementType === 'time' ? 'Zeit' : d.measurementType === 'distance' ? 'Distanz' : 'Duell'}
+                                    </span>
+                                )}
                                 <button onClick={() => setDeleteTarget({ id: d.id, name: d.name, type: 'discipline' })} style={{ background: 'none', border: 'none', color: 'var(--cream-dark)', opacity: .3, cursor: 'pointer', padding: '4px', flexShrink: 0, lineHeight: 0, transition: 'opacity .15s' }}
                                     onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
                                     onMouseLeave={e => (e.currentTarget.style.opacity = '.3')}>
@@ -385,57 +663,158 @@ export function AdminPage() {
             {/* Begegnungen */}
             {activeTab === 'matches' && (
                 <div>
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-                        <div style={{ flex: 1, minWidth: 160 }}>
-                            <label style={labelStyle}>Disziplin</label>
-                            <select value={matchDisc} onChange={e => setMatchDisc(e.target.value)} style={{ ...selectStyle, width: '100%' }}>
-                                {disciplines.map(d => <option key={d.id} value={d.id} style={{ background: '#0e2218' }}>Spiel {d.number}: {d.name}</option>)}
-                            </select>
-                        </div>
-                        <div style={{ minWidth: 120 }}>
-                            <label style={labelStyle}>Kategorie</label>
-                            <select value={matchGender} onChange={e => setMatchGender(e.target.value as 'm' | 'f')} style={{ ...selectStyle, width: '100%' }}>
-                                <option value="m" style={{ background: '#0e2218' }}>♂ Männer</option>
-                                <option value="f" style={{ background: '#0e2218' }}>♀ Frauen</option>
-                            </select>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
-                            <button onClick={handleLoadMatches} style={btnOutline}>Laden</button>
-                            <button onClick={handleGenerateMatches} style={btnPrimary}>Neu generieren</button>
-                        </div>
+                    {/* Discipline selector – Desktop */}
+                    <div className="tabs-desktop" style={{ display: 'flex', gap: 2, flexWrap: 'wrap', marginBottom: 24 }}>
+                        {disciplines.map(d => (
+                            <button key={d.id} onClick={() => setMatchDisc(d.id)} style={{
+                                fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2,
+                                textTransform: 'uppercase', padding: '10px 20px', cursor: 'pointer',
+                                transition: 'all .2s', borderRadius: '2px 2px 0 0', borderBottom: 'none',
+                                background: matchDisc === d.id ? 'var(--green-dark)' : 'rgba(240,230,204,.06)',
+                                color: matchDisc === d.id ? 'var(--gold)' : 'var(--cream-dark)',
+                                border: matchDisc === d.id ? '1px solid rgba(201,148,58,.4)' : '1px solid rgba(240,230,204,.12)',
+                            }}>
+                                {d.name}
+                            </button>
+                        ))}
+                    </div>
+                    {/* Discipline selector – Mobile */}
+                    <select className="tabs-mobile" value={matchDisc} onChange={e => setMatchDisc(e.target.value)}
+                        style={{ ...selectStyle, width: '100%', marginBottom: 24 }}>
+                        {disciplines.map(d => <option key={d.id} value={d.id} style={{ background: '#0e2218' }}>Spiel {d.number}: {d.name}</option>)}
+                    </select>
+
+                    {/* Add match modal */}
+                    {matchModalOpen && createPortal((() => {
+                        const genderMatches = matchGender === 'm' ? matchesM : matchesF;
+                        const usedTeamIds = new Set(genderMatches.flatMap(m => m.teamBId ? [m.teamAId, m.teamBId] : [m.teamAId]));
+                        const pointsById = Object.fromEntries(matchResults.map(r => [r.teamId, r.points]));
+                        const sortedTeams = [...teams.filter(t => t.gender === matchGender)]
+                            .sort((a, b) => (pointsById[b.id] ?? -1) - (pointsById[a.id] ?? -1));
+                        const closeModal = () => { setMatchModalOpen(false); setSelectedTeamA(null); };
+                        return (
+                            <div onClick={closeModal} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+                                <div onClick={e => e.stopPropagation()} style={{ background: 'var(--green-dark)', border: '1px solid rgba(201,148,58,.3)', borderRadius: 2, width: '100%', maxWidth: 440, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+                                    <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', flexShrink: 0 }}>
+                                        <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 6 }}>
+                                            Begegnung — {matchGender === 'm' ? '♂ Männer' : '♀ Frauen'}
+                                        </div>
+                                        <div style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, color: selectedTeamA ? 'var(--gold)' : 'var(--cream-dark)', opacity: selectedTeamA ? .9 : .5 }}>
+                                            {selectedTeamA
+                                                ? `Duell: ${teams.find(t => t.id === selectedTeamA)?.name} — zweites Team wählen`
+                                                : 'Team wählen und Begegnungstyp festlegen'}
+                                        </div>
+                                    </div>
+                                    <div style={{ overflowY: 'auto', flex: 1 }}>
+                                        {sortedTeams.length === 0 ? (
+                                            <div style={{ padding: '32px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 12, color: 'var(--cream-dark)', opacity: .3 }}>Keine Teams</div>
+                                        ) : sortedTeams.map((t, i) => {
+                                            const isSelected = selectedTeamA === t.id;
+                                            const isUsed = usedTeamIds.has(t.id);
+                                            const pts = pointsById[t.id];
+                                            const btnAction: React.CSSProperties = {
+                                                padding: '6px 12px', borderRadius: 2, cursor: 'pointer', flexShrink: 0,
+                                                fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase',
+                                                transition: 'all .15s',
+                                            };
+                                            const rowBg = isSelected ? 'rgba(201,148,58,.07)' : isUsed ? 'rgba(125,196,158,.05)' : 'transparent';
+                                            const nameColor = isSelected ? 'var(--gold)' : isUsed ? '#7dc49e' : 'var(--cream)';
+                                            return (
+                                                <div key={t.id} style={{
+                                                    display: 'flex', alignItems: 'center', gap: 10,
+                                                    padding: '10px 16px 10px 20px',
+                                                    borderBottom: '1px solid rgba(240,230,204,.06)',
+                                                    background: rowBg,
+                                                    transition: 'background .12s',
+                                                }}>
+                                                    <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, color: 'var(--gold)', opacity: .4, width: 18, flexShrink: 0, textAlign: 'right' }}>{i + 1}</span>
+                                                    <span style={{ flex: 1, fontFamily: 'Cinzel, serif', fontSize: 13, color: nameColor, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
+                                                    {pts !== undefined && <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, color: 'var(--gold)', opacity: .5, flexShrink: 0 }}>{pts} Pkt</span>}
+                                                    <button onClick={() => handleAddIndividual(t.id)} style={{
+                                                        ...btnAction,
+                                                        border: '1px solid rgba(240,230,204,.15)',
+                                                        background: 'transparent',
+                                                        color: 'var(--cream-dark)',
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(240,230,204,.4)'; e.currentTarget.style.color = 'var(--cream)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(240,230,204,.15)'; e.currentTarget.style.color = 'var(--cream-dark)'; }}>
+                                                        Einzeln
+                                                    </button>
+                                                    <button onClick={() => handleTeamClick(t.id)} style={{
+                                                        ...btnAction,
+                                                        border: isSelected ? '1px solid rgba(201,148,58,.6)' : '1px solid rgba(201,148,58,.25)',
+                                                        background: isSelected ? 'rgba(201,148,58,.2)' : 'transparent',
+                                                        color: isSelected ? 'var(--gold)' : 'var(--cream-dark)',
+                                                    }}>
+                                                        {isSelected ? '✕' : 'Duell'}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div style={{ padding: '14px 24px', borderTop: '1px solid rgba(240,230,204,.07)', flexShrink: 0 }}>
+                                        <button onClick={closeModal} style={btnOutline}>Schließen</button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })(), document.body)}
+
+                    {/* Two-column layout */}
+                    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                        {(['m', 'f'] as const).map(g => {
+                            const gMatches = g === 'm' ? matchesM : matchesF;
+                            const disc = disciplines.find(d => d.id === matchDisc);
+                            const mt = disc?.measurementType ?? 'none';
+                            return (
+                                <div key={g} style={{ flex: '1 1 320px', minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: g === 'm' ? '#7aadff' : '#ff8aaa' }}>
+                                            {g === 'm' ? '♂ Männer' : '♀ Frauen'}
+                                        </span>
+                                        <button onClick={() => { setMatchGender(g); setMatchModalOpen(true); }} style={btnPrimary}>+ Begegnung</button>
+                                    </div>
+                                    {gMatches.length === 0 ? (
+                                        <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 12, letterSpacing: 2, color: 'var(--cream-dark)', opacity: .3, border: '1px dashed rgba(201,148,58,.2)' }}>
+                                            Noch keine Begegnungen
+                                        </div>
+                                    ) : (
+                                        <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={e => handleDragEnd(e, g)}>
+                                            <SortableContext items={gMatches.map(m => m.id)} strategy={verticalListSortingStrategy}>
+                                                <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
+                                                    {gMatches.map(m => (
+                                                        <SortableMatchRow
+                                                            key={m.id}
+                                                            match={m}
+                                                            measurementType={mt}
+                                                            valueA={matchScores[m.id]?.a ?? ''}
+                                                            valueB={matchScores[m.id]?.b ?? ''}
+                                                            onValueAChange={v => setMatchScores(prev => ({ ...prev, [m.id]: { ...prev[m.id], a: v } }))}
+                                                            onValueBChange={v => setMatchScores(prev => ({ ...prev, [m.id]: { ...prev[m.id], b: v } }))}
+                                                            onSaveScore={() => handleSaveMatchScore(m.id)}
+                                                            onSaveMeasurement={(teamId, rawValue) => handleSaveMeasurement(m.id, teamId, rawValue)}
+                                                            onSetWinner={winnerId => handleSetWinner(m.id, winnerId)}
+                                                            onDelete={() => setMatchDeleteTarget(m.id)}
+                                                            fieldStyle={fieldStyle}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </SortableContext>
+                                        </DndContext>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
 
-                    {matches.length > 0 && (
-                        <>
-                            <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden', marginBottom: 12 }}>
-                                {matches.map((m, i) => (
-                                    <div key={m.id} style={{ padding: '12px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                                            <span style={{ flex: 1, fontSize: 15, color: m.winnerTeamId === m.teamAId ? 'var(--gold)' : 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.teamAName}</span>
-                                            <input type="number" placeholder="Pkt"
-                                                value={matchScores[m.id]?.a ?? (m.teamAScore !== null ? String(m.teamAScore) : '')}
-                                                onChange={e => setMatchScores(prev => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value } }))}
-                                                style={{ ...fieldStyle, width: 72, textAlign: 'center', padding: '6px 8px', fontSize: 14, flexShrink: 0 }}
-                                            />
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                            <span style={{ flex: 1, fontSize: 15, color: m.winnerTeamId === m.teamBId ? 'var(--gold)' : 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.teamBName}</span>
-                                            <input type="number" placeholder="Pkt"
-                                                value={matchScores[m.id]?.b ?? (m.teamBScore !== null ? String(m.teamBScore) : '')}
-                                                onChange={e => setMatchScores(prev => ({ ...prev, [m.id]: { ...prev[m.id], b: e.target.value } }))}
-                                                style={{ ...fieldStyle, width: 72, textAlign: 'center', padding: '6px 8px', fontSize: 14, flexShrink: 0 }}
-                                            />
-                                        </div>
-                                        {m.isManualOverride && (
-                                            <div style={{ fontFamily: 'Cinzel, serif', fontSize: 9, letterSpacing: 1, color: 'var(--gold)', opacity: .5, marginTop: 4 }}>manuell</div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                            <button onClick={handleSaveMatches} style={{ width: '100%', ...btnPrimary, padding: '12px 28px', background: matchSaved ? 'var(--green-light)' : 'var(--gold)', transition: 'background .3s' }}>
-                                {matchSaved ? '✓ Gespeichert!' : 'Begegnungen speichern'}
-                            </button>
-                        </>
+                    {matchSaved && <div style={{ textAlign: 'center', marginTop: 12, fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2, color: '#7dc49e', textTransform: 'uppercase' }}>✓ Gespeichert</div>}
+
+                    {matchDeleteTarget && (
+                        <ConfirmModal
+                            message="Begegnung wirklich löschen?"
+                            onConfirm={() => handleDeleteMatch(matchDeleteTarget)}
+                            onCancel={() => setMatchDeleteTarget(null)}
+                        />
                     )}
                 </div>
             )}
@@ -521,42 +900,90 @@ export function AdminPage() {
             )}
 
             {/* Ergebnisse eintragen */}
-            {activeTab === 'results' && (
-                <div>
-                    <div style={{ marginBottom: 16 }}>
-                        <label style={labelStyle}>Disziplin</label>
-                        <select value={selectedDisc} onChange={e => setSelectedDisc(e.target.value)} style={{ ...selectStyle, width: '100%' }}>
-                            {disciplines.map(d => <option key={d.id} value={d.id} style={{ background: '#0e2218' }}>Spiel {d.number}: {d.name}</option>)}
-                        </select>
-                    </div>
-                    <div style={{ border: '1px solid rgba(240,230,204,.1)', overflow: 'hidden', marginBottom: 16 }}>
-                        {teams.length === 0 ? (
-                            <div style={{ padding: '30px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream-dark)', opacity: .4 }}>Zuerst Teams hinzufügen</div>
-                        ) : teams.map((t, i) => (
-                            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)', flexWrap: 'wrap' }}>
-                                <span style={genderBadge(t.gender)}>{t.gender === 'm' ? '♂' : '♀'}</span>
-                                <span style={{ flex: 1, fontSize: 15, color: 'var(--cream)', minWidth: 100 }}>{t.name}</span>
-                                <input type="text" placeholder="Wert (z.B. 12.34m)"
-                                    value={points[t.id]?.rawValue ?? ''}
-                                    onChange={e => setPoints(prev => ({ ...prev, [t.id]: { ...prev[t.id], rawValue: e.target.value } }))}
-                                    style={{ ...fieldStyle, width: 130, padding: '6px 10px', fontSize: 14, flexShrink: 0 }}
-                                />
-                                <input type="number" placeholder="Pkt"
+            {activeTab === 'results' && (() => {
+                const selectedDiscObj = disciplines.find(d => d.id === selectedDisc);
+                const mt = selectedDiscObj?.measurementType ?? 'none';
+                const sortedFor = (gender: 'm' | 'f') => [...teams].filter(t => t.gender === gender).sort((a, b) => {
+                    if (mt === 'duel') {
+                        const ra = points[a.id]?.rawValue ?? '';
+                        const rb = points[b.id]?.rawValue ?? '';
+                        const rank = (v: string) => v === 'Sieg' ? 0 : v === 'Niederlage' ? 1 : 2;
+                        return rank(ra) - rank(rb);
+                    }
+                    if (mt === 'none') return 0;
+                    const rawA = points[a.id]?.rawValue ?? '';
+                    const rawB = points[b.id]?.rawValue ?? '';
+                    if (!rawA && !rawB) return 0;
+                    if (!rawA) return 1;
+                    if (!rawB) return -1;
+                    const diff = parseRawValue(rawA) - parseRawValue(rawB);
+                    return mt === 'time' ? diff : -diff;
+                });
+                const renderTeamList = (genderTeams: typeof teams) => (
+                    <div style={{ border: '1px solid rgba(240,230,204,.1)', overflow: 'hidden' }}>
+                        {genderTeams.length === 0 ? (
+                            <div style={{ padding: '30px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream-dark)', opacity: .4 }}>Keine Teams</div>
+                        ) : genderTeams.map((t, i) => (
+                            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
+                                {(mt === 'time' || mt === 'distance') && points[t.id]?.rawValue && (
+                                    <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, color: 'var(--gold)', opacity: .5, width: 20, textAlign: 'right', flexShrink: 0 }}>{i + 1}</span>
+                                )}
+                                <span style={{ flex: 1, fontSize: 15, color: 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
+                                {mt !== 'none' && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                                        <span style={{ fontFamily: 'EB Garamond, serif', fontSize: 14, color: points[t.id]?.rawValue ? 'var(--cream-dark)' : 'rgba(240,230,204,.2)', background: 'rgba(240,230,204,.04)', border: '1px solid rgba(240,230,204,.1)', borderRadius: 2, padding: '6px 10px', width: 100, textAlign: 'center', boxSizing: 'border-box' as const, userSelect: 'none' as const }}>
+                                            {points[t.id]?.rawValue || '—'}
+                                        </span>
+                                        {mt !== 'duel' && (
+                                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, color: 'var(--cream-dark)', opacity: .4 }}>
+                                                {mt === 'time' ? 'min' : 'm'}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                                <input type="text" inputMode="numeric" placeholder="Pkt"
                                     value={points[t.id]?.points ?? ''}
                                     onChange={e => setPoints(prev => ({ ...prev, [t.id]: { ...prev[t.id], points: e.target.value } }))}
+                                    onBlur={() => handleSavePoint(t.id)}
                                     style={{ ...fieldStyle, width: 72, textAlign: 'center', padding: '6px 10px', fontSize: 14, flexShrink: 0 }}
                                 />
                             </div>
                         ))}
                     </div>
-                    <button onClick={handleSaveResults} style={{ width: '100%', ...btnPrimary, padding: '12px 28px', background: saved ? 'var(--green-light)' : 'var(--gold)', transition: 'background .3s' }}>
-                        {saved ? '✓ Gespeichert!' : 'Ergebnisse speichern'}
-                    </button>
-                    <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--cream-dark)', opacity: .4, marginTop: 12, fontStyle: 'italic' }}>
-                        Änderungen werden sofort für alle Besucher sichtbar
-                    </p>
-                </div>
-            )}
+                );
+                return (
+                    <div>
+                        <div className="tabs-desktop" style={{ display: 'flex', gap: 2, flexWrap: 'wrap', marginBottom: 24 }}>
+                            {disciplines.map(d => (
+                                <button key={d.id} onClick={() => setSelectedDisc(d.id)} style={{
+                                    fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2,
+                                    textTransform: 'uppercase', padding: '10px 20px', cursor: 'pointer',
+                                    transition: 'all .2s', borderRadius: '2px 2px 0 0', borderBottom: 'none',
+                                    background: selectedDisc === d.id ? 'var(--green-dark)' : 'rgba(240,230,204,.06)',
+                                    color: selectedDisc === d.id ? 'var(--gold)' : 'var(--cream-dark)',
+                                    border: selectedDisc === d.id ? '1px solid rgba(201,148,58,.4)' : '1px solid rgba(240,230,204,.12)',
+                                }}>
+                                    {d.name}
+                                </button>
+                            ))}
+                        </div>
+                        <select className="tabs-mobile" value={selectedDisc} onChange={e => setSelectedDisc(e.target.value)}
+                            style={{ ...selectStyle, width: '100%', marginBottom: 24 }}>
+                            {disciplines.map(d => <option key={d.id} value={d.id} style={{ background: '#0e2218' }}>{d.name}</option>)}
+                        </select>
+                        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: 16 }}>
+                            {(['m', 'f'] as const).map(g => (
+                                <div key={g} style={{ flex: '1 1 320px', minWidth: 0 }}>
+                                    <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: g === 'm' ? '#7aadff' : '#ff8aaa', marginBottom: 10 }}>
+                                        {g === 'm' ? '♂ Männer' : '♀ Frauen'}
+                                    </div>
+                                    {renderTeamList(sortedFor(g))}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })()}
 
             {deleteTarget && (
                 <ConfirmModal

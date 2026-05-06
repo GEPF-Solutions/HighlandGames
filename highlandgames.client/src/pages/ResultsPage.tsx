@@ -57,9 +57,10 @@ function LeaderboardTable({ entries, color }: { entries: LeaderboardEntryDto[]; 
     );
 }
 
-function DiscResultTable({ results, color }: { results: ResultDto[]; color: string }) {
+function DiscResultTable({ results, color, measurementType }: { results: ResultDto[]; color: string; measurementType?: string }) {
     if (results.length === 0) return empty;
     const hasRawValues = results.some(r => r.rawValue != null);
+    const unit = measurementType === 'time' ? 'min' : measurementType === 'distance' ? 'm' : '';
     return (
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
             <thead style={{ background: 'var(--green-dark)' }}>
@@ -76,7 +77,11 @@ function DiscResultTable({ results, color }: { results: ResultDto[]; color: stri
                         <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: rankColor(i) }}>{rankMedal(i)}</td>
                         <td style={{ ...tdStyle, color: 'var(--cream)' }}>{r.teamName}</td>
                         <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', fontWeight: 700, color }}>{r.points}</td>
-                        {hasRawValues && <td style={{ ...tdNarrow, fontStyle: 'italic', color: 'var(--cream-dark)', opacity: .7 }}>{r.rawValue ?? '—'}</td>}
+                        {hasRawValues && (
+                            <td style={{ ...tdNarrow, fontStyle: 'italic', color: 'var(--cream-dark)', opacity: .7 }}>
+                                {r.rawValue ? <>{r.rawValue}{unit && <span style={{ fontSize: 11, opacity: .6, marginLeft: 4 }}>{unit}</span>}</> : '—'}
+                            </td>
+                        )}
                     </tr>
                 ))}
             </tbody>
@@ -154,7 +159,7 @@ export function ResultsPage() {
                             <div style={{ display: 'block', width: '100%', border: '1px solid rgba(201,148,58,.2)', overflowX: 'auto' }}>
                                 {activeTab === 'total'
                                     ? <LeaderboardTable entries={gi === 0 ? mLeaderboard : fLeaderboard} color={color} />
-                                    : <DiscResultTable results={gi === 0 ? mDiscResults : fDiscResults} color={color} />
+                                    : <DiscResultTable results={gi === 0 ? mDiscResults : fDiscResults} color={color} measurementType={disciplines.find(d => d.id === activeTab)?.measurementType} />
                                 }
                             </div>
                         </div>
