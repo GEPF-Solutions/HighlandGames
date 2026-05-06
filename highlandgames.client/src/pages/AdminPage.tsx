@@ -118,6 +118,9 @@ function SortableMatchRow({ match: m, measurementType, valueA, valueB, onValueAC
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ flex: 1, fontSize: 13, color: 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.teamAName}</span>
                             {measureInput(valueA, onValueAChange, m.teamAId)}
+                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, opacity: 0, flexShrink: 0 }}>vs</span>
+                            <div style={{ width: 90, flexShrink: 0 }} />
+                            <div style={{ flex: 1 }} />
                         </div>
                     )
                 ) : (
@@ -132,7 +135,10 @@ function SortableMatchRow({ match: m, measurementType, valueA, valueB, onValueAC
                     ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ flex: 1, fontSize: 13, color: 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.teamAName}</span>
-                            <input type="number" placeholder="–" value={valueA} onChange={e => onValueAChange(e.target.value)} onBlur={onSaveScore} style={{ ...fieldStyle, width: 72, textAlign: 'center', padding: '4px 6px', fontSize: 13, flexShrink: 0 }} />
+                            <input type="number" placeholder="–" value={valueA} onChange={e => onValueAChange(e.target.value)} onBlur={onSaveScore} style={{ ...fieldStyle, width: 52, textAlign: 'center', padding: '4px 6px', fontSize: 13, flexShrink: 0 }} />
+                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, opacity: 0, flexShrink: 0 }}>:</span>
+                            <div style={{ width: 52, flexShrink: 0 }} />
+                            <div style={{ flex: 1 }} />
                         </div>
                     )
                 )}
@@ -652,7 +658,7 @@ export function AdminPage() {
                                 </button>
                                 <div style={{ flex: 1 }} />
                                 <select value={d.status} onChange={e => handleStatusChange(d.id, e.target.value)}
-                                    style={{ ...selectStyle, flexShrink: 0 }}>
+                                    style={{ ...selectStyle, flexShrink: 0, minWidth: 160 }}>
                                     <option value="upcoming" style={{ background: '#0e2218' }}>Geplant</option>
                                     <option value="next" style={{ background: '#0e2218' }}>Als nächstes</option>
                                     <option value="live" style={{ background: '#0e2218' }}>Läuft</option>
