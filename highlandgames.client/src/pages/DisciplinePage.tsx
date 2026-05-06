@@ -163,7 +163,7 @@ export function DisciplinePage() {
 
             <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap' }}>
                 {discipline.icon?.startsWith('/') ? (
-                    <img src={discipline.icon} alt={discipline.name} style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
+                    <img src={discipline.icon} alt={discipline.name} style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
                 ) : discipline.icon ? (
                     <span style={{ fontSize: 80, lineHeight: 1, flexShrink: 0 }}>{discipline.icon}</span>
                 ) : null}
@@ -176,16 +176,17 @@ export function DisciplinePage() {
                             {statusLabel[discipline.status]}
                         </span>
                     </div>
-                    <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)', marginBottom: discipline.description ? 12 : 0 }}>
+                    <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)', margin: 0 }}>
                         {discipline.name}
                     </h2>
-                    {discipline.description && (
-                        <p style={{ fontSize: 17, lineHeight: 1.8, color: 'var(--cream-dark)', opacity: .8, margin: 0 }}>
-                            {discipline.description}
-                        </p>
-                    )}
                 </div>
             </div>
+
+            {discipline.description && (
+                <p style={{ fontSize: 17, lineHeight: 1.8, color: 'var(--cream-dark)', opacity: .8, marginBottom: 24 }}>
+                    {discipline.description}
+                </p>
+            )}
 
             <Separator />
 
