@@ -38,11 +38,13 @@ interface SortableMatchRowProps {
     onSaveScore: () => void;
     onSaveMeasurement: (teamId: string, rawValue: string) => void;
     onSetWinner: (winnerId: string | null) => void;
+    onSetSoloResult?: (rawValue: 'Sieg' | 'Niederlage') => void;
+    soloResultRawValue?: string;
     onDelete: () => void;
     fieldStyle: React.CSSProperties;
 }
 
-function SortableMatchRow({ match: m, measurementType, valueA, valueB, onValueAChange, onValueBChange, onSaveScore, onSaveMeasurement, onSetWinner, onDelete, fieldStyle }: SortableMatchRowProps) {
+function SortableMatchRow({ match: m, measurementType, valueA, valueB, onValueAChange, onValueBChange, onSaveScore, onSaveMeasurement, onSetWinner, onSetSoloResult, soloResultRawValue, onDelete, fieldStyle }: SortableMatchRowProps) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: m.id });
     const rowStyle: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
@@ -97,13 +99,36 @@ function SortableMatchRow({ match: m, measurementType, valueA, valueB, onValueAC
                     m.teamBId ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={teamNameStyle(m.teamAId)}>{m.teamAName}</span>
-                            {winnerBtn('← Sieger', m.teamAId)}
+                            {winnerBtn('Sieger', m.teamAId)}
                             <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, color: 'var(--cream-dark)', opacity: .3 }}>vs</span>
-                            {winnerBtn('Sieger →', m.teamBId)}
+                            {winnerBtn('Sieger', m.teamBId)}
                             <span style={{ ...teamNameStyle(m.teamBId), textAlign: 'right' }}>{m.teamBName}</span>
                         </div>
                     ) : (
-                        <span style={{ fontSize: 13, color: 'var(--cream)' }}>{m.teamAName}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ flex: 1, fontSize: 13, color: 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.teamAName}</span>
+                            {(['Sieg', 'Niederlage'] as const).map(result => {
+                                const active = soloResultRawValue === result;
+                                const label = result === 'Sieg' ? 'Sieger' : 'Verlierer';
+                                return (
+                                    <button key={result} onClick={() => onSetSoloResult?.(result)} style={{
+                                        fontFamily: 'Cinzel, serif', fontSize: 9, letterSpacing: 1, textTransform: 'uppercase',
+                                        padding: '3px 8px', borderRadius: 2, cursor: 'pointer', flexShrink: 0,
+                                        border: active
+                                            ? (result === 'Sieg' ? '1px solid rgba(201,148,58,.5)' : '1px solid rgba(200,60,60,.5)')
+                                            : '1px solid rgba(240,230,204,.15)',
+                                        background: active
+                                            ? (result === 'Sieg' ? 'rgba(201,148,58,.15)' : 'rgba(200,60,60,.15)')
+                                            : 'transparent',
+                                        color: active
+                                            ? (result === 'Sieg' ? 'var(--gold)' : '#e07070')
+                                            : 'var(--cream-dark)',
+                                        transition: 'all .15s',
+                                    }}>{label}</button>
+                                );
+                            })}
+                            <div style={{ flex: 1 }} />
+                        </div>
                     )
                 ) : measurementType === 'time' || measurementType === 'distance' ? (
                     m.teamBId ? (
@@ -369,6 +394,27 @@ export function AdminPage() {
                 }
             }
         }
+    };
+
+    const handleSoloResult = async (matchId: string, rawValue: 'Sieg' | 'Niederlage') => {
+        const match = [...matchesM, ...matchesF].find(m => m.id === matchId);
+        if (!match) return;
+        const current = matchResults.find(r => r.teamId === match.teamAId)?.rawValue;
+        if (current === rawValue) {
+            const updated = await updateMatch(matchId, { winnerTeamId: null });
+            updateMatchInState(updated);
+            const toDelete = matchResults.filter(r => r.teamId === match.teamAId);
+            await Promise.all(toDelete.map(r => resultsApi.delete(r.id)));
+        } else {
+            const winnerId = rawValue === 'Sieg' ? match.teamAId : null;
+            const updated = await updateMatch(matchId, { winnerTeamId: winnerId });
+            updateMatchInState(updated);
+            await resultsApi.upsert({ teamId: match.teamAId, disciplineId: matchDisc, points: 0, rawValue });
+        }
+        const results = await resultsApi.getByDiscipline(matchDisc);
+        setMatchResults(results);
+        if (matchDisc === selectedDisc)
+            setPoints(Object.fromEntries(results.map(r => [r.teamId, { points: String(r.points), rawValue: r.rawValue ?? '' }])));
     };
 
     const handleSetWinner = async (matchId: string, winnerId: string | null) => {
@@ -803,6 +849,8 @@ export function AdminPage() {
                                                             onSaveScore={() => handleSaveMatchScore(m.id)}
                                                             onSaveMeasurement={(teamId, rawValue) => handleSaveMeasurement(m.id, teamId, rawValue)}
                                                             onSetWinner={winnerId => handleSetWinner(m.id, winnerId)}
+                                                            onSetSoloResult={!m.teamBId ? rawValue => handleSoloResult(m.id, rawValue) : undefined}
+                                                            soloResultRawValue={!m.teamBId ? matchResults.find(r => r.teamId === m.teamAId)?.rawValue : undefined}
                                                             onDelete={() => setMatchDeleteTarget(m.id)}
                                                             fieldStyle={fieldStyle}
                                                         />
