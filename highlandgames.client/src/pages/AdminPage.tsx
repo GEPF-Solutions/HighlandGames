@@ -582,14 +582,14 @@ export function AdminPage() {
 
 
     const btnPrimary = {
-        fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2,
+        fontFamily: 'Cinzel, serif', fontSize: 14, letterSpacing: 0,
         textTransform: 'uppercase' as const, padding: '10px 16px', borderRadius: 2,
         cursor: 'pointer', border: 'none', background: 'var(--gold)',
-        color: 'var(--green-dark)', whiteSpace: 'nowrap' as const,
+        color: '#000', whiteSpace: 'nowrap' as const,
     };
 
     const btnOutline = {
-        fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2,
+        fontFamily: 'Cinzel, serif', fontSize: 14, letterSpacing: 0,
         textTransform: 'uppercase' as const, padding: '10px 16px', borderRadius: 2,
         cursor: 'pointer', border: '1px solid rgba(240,230,204,.2)',
         background: 'transparent', color: 'var(--cream-dark)', whiteSpace: 'nowrap' as const,

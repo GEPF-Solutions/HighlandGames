@@ -46,7 +46,7 @@ export function MatchesPage() {
                         <div
                             key={d.id}
                             onClick={() => navigate('/disciplines/' + d.id)}
-                            style={{ border: '1px solid rgba(201,148,58,.2)', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'border-color .15s', overflow: 'hidden' }}
+                            style={{ border: '1px solid rgba(201,148,58,.2)', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'border-color .15s', overflow: 'hidden', position: 'relative' }}
                             onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,148,58,.55)'; e.currentTarget.style.background = 'rgba(201,148,58,.04)'; }}
                             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,148,58,.2)'; e.currentTarget.style.background = 'transparent'; }}
                         >
@@ -68,7 +68,7 @@ export function MatchesPage() {
                                         {d.name}
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                                <div style={{ position: 'absolute', top: 14, right: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                                     {d.status === 'live' && (
                                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#e07070', animation: 'pulse 1.4s ease infinite', display: 'inline-block' }} />
                                     )}

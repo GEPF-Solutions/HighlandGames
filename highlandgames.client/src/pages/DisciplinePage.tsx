@@ -133,16 +133,19 @@ export function DisciplinePage() {
                 const fmt = (v: string | null | undefined) => v
                     ? <>{v}{unit && <span style={{ fontSize: 11, opacity: .5, marginLeft: 3 }}>{unit}</span>}</>
                     : <span style={{ opacity: .25 }}>—</span>;
-                return m.teamBId
-                    ? <>{fmt(rawA)}<span style={{ margin: '0 8px', opacity: .3 }}>:</span>{fmt(rawB)}</>
-                    : fmt(rawA);
+                if (!hasDuels) return fmt(rawA);
+                return (
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{ flex: 1, textAlign: 'right' }}>{fmt(rawA)}</span>
+                        <span style={{ padding: '0 8px', opacity: m.teamBId ? .3 : 0 }}>:</span>
+                        <span style={{ flex: 1, textAlign: 'left', opacity: m.teamBId ? 1 : 0 }}>
+                            {fmt(rawB)}
+                        </span>
+                    </div>
+                );
             }
             if (mt === 'duel') {
-                return m.winnerTeamId
-                    ? <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, color: '#7dc49e' }}>
-                        {m.winnerTeamId === m.teamAId ? m.teamAName : m.teamBName}
-                      </span>
-                    : <span style={{ opacity: .25 }}>—</span>;
+                return <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, color: 'var(--cream-dark)', opacity: .3 }}>vs</span>;
             }
             return <span style={{ fontFamily: 'Cinzel, serif', color: 'var(--cream-dark)' }}>
                 {m.teamBId ? `${m.teamAScore ?? '–'} : ${m.teamBScore ?? '–'}` : (m.teamAScore ?? '–')}
@@ -155,7 +158,7 @@ export function DisciplinePage() {
                     <tr>
                         <th style={thNarrow}>#</th>
                         <th style={thStyle}>Team A</th>
-                        <th style={thNarrow}>{mt === 'duel' ? 'Sieger' : mt === 'none' ? 'Score' : 'Messwert'}</th>
+                        <th style={thNarrow}>{mt === 'duel' ? 'vs' : mt === 'none' ? 'Score' : 'Messwert'}</th>
                         {hasDuels && <th style={{ ...thStyle, textAlign: 'right' }}>Team B</th>}
                     </tr>
                 </thead>
@@ -163,7 +166,7 @@ export function DisciplinePage() {
                     {matchList.map((m, i) => (
                         <tr key={m.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
                             <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: 'var(--gold)', opacity: .4 }}>{i + 1}</td>
-                            <td style={{ ...tdStyle, color: m.winnerTeamId === m.teamAId ? 'var(--gold)' : 'var(--cream)' }}>{m.teamAName}</td>
+                            <td style={{ ...tdStyle, color: (!m.teamBId || m.winnerTeamId === m.teamAId) ? 'var(--gold)' : 'var(--cream)' }}>{m.teamAName}</td>
                             <td style={{ ...tdNarrow, fontStyle: mt === 'time' || mt === 'distance' ? 'italic' : 'normal', color: 'var(--cream-dark)' }}>
                                 {centerCell(m)}
                             </td>
@@ -214,7 +217,7 @@ export function DisciplinePage() {
                             {statusLabel[discipline.status]}
                         </span>
                     </div>
-                    <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)', margin: 0 }}>
+                    <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)', margin: 0, hyphens: 'auto', overflowWrap: 'break-word' }}>
                         {discipline.name}
                     </h2>
                 </div>
