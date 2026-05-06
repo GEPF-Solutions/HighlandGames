@@ -17,7 +17,44 @@ import { useAuth } from '../hooks/useAuth';
 import { Separator } from '../components/Separator';
 import { ConfirmModal } from '../components/ConfirmModal';
 
-type AdminTab = 'disciplines' | 'matches' | 'teams' | 'results';
+type AdminTab = 'disciplines' | 'matches' | 'teams' | 'results' | 'tiebreaker';
+
+const tiebreakerRankColor = (i: number) =>
+    i === 0 ? '#f0c040' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : 'rgba(240,230,204,.4)';
+
+function SortableTiebreakerRow({ teamId, teamName, points, rank }: { teamId: string; teamName: string; points: number; rank: number }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: teamId });
+    const color = tiebreakerRankColor(rank - 1);
+    return (
+        <div ref={setNodeRef} style={{
+            transform: CSS.Transform.toString(transform), transition,
+            opacity: isDragging ? 0.5 : 1,
+            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+            borderBottom: '1px solid rgba(240,230,204,.07)',
+            background: isDragging ? 'rgba(201,148,58,.06)' : 'transparent',
+        }}>
+            <div {...attributes} {...listeners} style={{ cursor: 'grab', color: 'var(--cream-dark)', opacity: .3, flexShrink: 0, lineHeight: 0, padding: '2px 4px' }}>
+                <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+                    <circle cx="4" cy="3" r="1.5"/><circle cx="8" cy="3" r="1.5"/>
+                    <circle cx="4" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/>
+                    <circle cx="4" cy="13" r="1.5"/><circle cx="8" cy="13" r="1.5"/>
+                </svg>
+            </div>
+            <span style={{
+                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: `${color}22`, border: `1px solid ${color}66`,
+                fontFamily: 'Cinzel, serif', fontSize: 12, fontWeight: 700, color,
+            }}>{rank}</span>
+            <span style={{ flex: 1, fontFamily: 'Cinzel, serif', fontSize: 14, color: 'var(--cream)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {teamName}
+            </span>
+            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 12, color: 'var(--gold)', opacity: .5, flexShrink: 0 }}>
+                {points} Pkt
+            </span>
+        </div>
+    );
+}
 
 function parseRawValue(v: string): number {
     if (!v) return Infinity;
@@ -199,6 +236,8 @@ export function AdminPage() {
     const [matchModalOpen, setMatchModalOpen] = useState(false);
     const [matchResults, setMatchResults] = useState<ResultDto[]>([]);
     const [leaderboardPoints, setLeaderboardPoints] = useState<Record<string, number>>({});
+    const [tiebreakerGroups, setTiebreakerGroups] = useState<Record<string, TeamDto[]>>({});
+    const [tiebreakerDirty, setTiebreakerDirty] = useState(false);
     const [newDiscName, setNewDiscName] = useState('');
     const [newDiscNumber, setNewDiscNumber] = useState('');
     const [newDiscDesc, setNewDiscDesc] = useState('');
@@ -235,9 +274,39 @@ export function AdminPage() {
         });
     }, [selectedDisc, loggedIn, activeTab]);
 
+    useEffect(() => {
+        if (activeTab !== 'tiebreaker' || !loggedIn || teams.length === 0) return;
+        Promise.all([resultsApi.getLeaderboard('m'), resultsApi.getLeaderboard('f')]).then(([lbM, lbF]) => {
+            const allLb = [...lbM, ...lbF];
+            const pts = Object.fromEntries(allLb.map(e => [e.teamId, e.totalPoints]));
+            const tbRanks = Object.fromEntries(allLb.map(e => [e.teamId, e.tiebreakerRank ?? null]));
+            setLeaderboardPoints(pts);
+            const newGroups: Record<string, TeamDto[]> = {};
+            for (const g of ['m', 'f'] as const) {
+                const byPoints = new Map<number, TeamDto[]>();
+                for (const t of teams.filter(t => t.gender === g)) {
+                    const p = pts[t.id] ?? 0;
+                    if (p === 0) continue;
+                    if (!byPoints.has(p)) byPoints.set(p, []);
+                    byPoints.get(p)!.push(t);
+                }
+                for (const [p, group] of byPoints) {
+                    if (group.length < 2) continue;
+                    const key = `${g}-${p}`;
+                    newGroups[key] = [...group].sort((a, b) =>
+                        (tbRanks[a.id] ?? Infinity) - (tbRanks[b.id] ?? Infinity) || a.name.localeCompare(b.name)
+                    );
+                }
+            }
+            setTiebreakerGroups(newGroups);
+        });
+    }, [activeTab, loggedIn, teams]);
+
+
     const loadTeams = async () => {
         const [m, f] = await Promise.all([teamsApi.getByGender('m'), teamsApi.getByGender('f')]);
-        setTeams([...m, ...f]);
+        const all = [...m, ...f];
+        setTeams(all);
     };
 
     const handleAddTeam = async () => {
@@ -417,6 +486,28 @@ export function AdminPage() {
             setPoints(Object.fromEntries(results.map(r => [r.teamId, { points: String(r.points), rawValue: r.rawValue ?? '' }])));
     };
 
+    const handleTiebreakerDragEnd = (event: DragEndEvent, groupKey: string) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+        setTiebreakerGroups(prev => {
+            const group = prev[groupKey] ?? [];
+            const oldIndex = group.findIndex(t => t.id === active.id);
+            const newIndex = group.findIndex(t => t.id === over.id);
+            if (oldIndex === -1 || newIndex === -1) return prev;
+            return { ...prev, [groupKey]: arrayMove(group, oldIndex, newIndex) };
+        });
+        setTiebreakerDirty(true);
+    };
+
+    const handleSaveTiebreaker = async () => {
+        const ranks: { id: string; rank: number }[] = [];
+        for (const groupTeams of Object.values(tiebreakerGroups)) {
+            groupTeams.forEach((t, i) => ranks.push({ id: t.id, rank: i + 1 }));
+        }
+        await teamsApi.setTiebreakerRanksBulk(ranks);
+        setTiebreakerDirty(false);
+    };
+
     const handleSetWinner = async (matchId: string, winnerId: string | null) => {
         const match = [...matchesM, ...matchesF].find(m => m.id === matchId);
         const updated = await updateMatch(matchId, { winnerTeamId: winnerId });
@@ -544,6 +635,7 @@ export function AdminPage() {
         { id: 'teams', label: 'Teams' },
         { id: 'matches', label: 'Begegnungen' },
         { id: 'results', label: 'Ergebnisse' },
+        { id: 'tiebreaker', label: 'Stechen' },
     ];
 
     const tabBar = (
@@ -1038,6 +1130,68 @@ export function AdminPage() {
                                 </div>
                             ))}
                         </div>
+                    </div>
+                );
+            })()}
+
+            {activeTab === 'tiebreaker' && (() => {
+                const tieGroups = (['m', 'f'] as const).flatMap(g => {
+                    const byPoints = new Map<number, string[]>();
+                    for (const t of teams.filter(t => t.gender === g)) {
+                        const pts = leaderboardPoints[t.id] ?? 0;
+                        if (pts === 0) continue;
+                        if (!byPoints.has(pts)) byPoints.set(pts, []);
+                        byPoints.get(pts)!.push(t.id);
+                    }
+                    return [...byPoints.entries()]
+                        .filter(([, ids]) => ids.length >= 2)
+                        .map(([pts, ids]) => ({ gender: g, pts, key: `${g}-${pts}`, ids }));
+                });
+
+                if (tieGroups.length === 0) return (
+                    <div style={{ textAlign: 'center', padding: '80px 20px', fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--cream-dark)', opacity: .25 }}>
+                        Kein Gleichstand
+                    </div>
+                );
+
+                return (
+                    <div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+                        <button onClick={handleSaveTiebreaker} disabled={!tiebreakerDirty} style={{ ...btnPrimary, opacity: tiebreakerDirty ? 1 : 0.4 }}>Stechen speichern</button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                        {tieGroups.map(group => {
+                            const groupTeams = tiebreakerGroups[group.key]
+                                ?? group.ids.map(id => teams.find(t => t.id === id)).filter((t): t is TeamDto => t != null);
+                            return (
+                                <div key={group.key} style={{ flex: '1 1 280px', minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+                                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: group.gender === 'm' ? '#7aadff' : '#ff8aaa' }}>
+                                            {group.gender === 'm' ? '♂ Männer' : '♀ Frauen'}
+                                        </span>
+                                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, color: 'var(--gold)', opacity: .5 }}>
+                                            {group.pts} Pkt Gleichstand
+                                        </span>
+                                    </div>
+                                    <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={e => handleTiebreakerDragEnd(e, group.key)}>
+                                        <SortableContext items={groupTeams.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                                            <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
+                                                {groupTeams.map((team, i) => (
+                                                    <SortableTiebreakerRow
+                                                        key={team.id}
+                                                        teamId={team.id}
+                                                        teamName={team.name}
+                                                        points={leaderboardPoints[team.id] ?? 0}
+                                                        rank={i + 1}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </SortableContext>
+                                    </DndContext>
+                                </div>
+                            );
+                        })}
+                    </div>
                     </div>
                 );
             })()}

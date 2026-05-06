@@ -29,7 +29,10 @@ public class ResultService(IResultRepository resultRepository, ITeamRepository t
         var teams = await teamRepository.GetByGenderAsync(gender);
         var results = await resultRepository.GetAllAsync();
 
-        return teams.Select(t => new LeaderboardEntryDto(t.Id, t.Name, t.Gender, results.Where(r => r.TeamId == t.Id).Sum(r => r.Points))).OrderByDescending(e => e.TotalPoints);
+        return teams
+            .Select(t => new LeaderboardEntryDto(t.Id, t.Name, t.Gender, results.Where(r => r.TeamId == t.Id).Sum(r => r.Points), t.TiebreakerRank))
+            .OrderByDescending(e => e.TotalPoints)
+            .ThenBy(e => e.TiebreakerRank ?? int.MaxValue);
     }
 
     public async Task<ResultDto> UpsertAsync(UpsertResultDto dto)

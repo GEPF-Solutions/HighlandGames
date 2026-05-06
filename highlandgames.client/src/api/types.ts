@@ -5,6 +5,7 @@ export interface TeamDto {
     id: string;
     name: string;
     gender: Gender;
+    tiebreakerRank?: number | null;
 }
 
 export type MeasurementType = 'time' | 'distance' | 'duel' | 'none';
@@ -35,6 +36,7 @@ export interface LeaderboardEntryDto {
     teamName: string;
     gender: Gender;
     totalPoints: number;
+    tiebreakerRank?: number | null;
 }
 
 export interface CreateTeamDto {

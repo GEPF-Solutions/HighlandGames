@@ -1,14 +1,15 @@
-﻿using HighlandGames.Server.Data;
-using HighlandGames.Server.DTOs;
+﻿using HighlandGames.Server.DTOs;
+using HighlandGames.Server.Hubs;
 using HighlandGames.Server.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace HighlandGames.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class TeamsController(ITeamService teamService) : ControllerBase
+public class TeamsController(ITeamService teamService, IResultService resultService, IHubContext<ResultsHub> hubContext) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll()
@@ -35,13 +36,43 @@ public class TeamsController(ITeamService teamService) : ControllerBase
     public async Task<IActionResult> Delete(Guid id)
     {
         var success = await teamService.DeleteAsync(id);
+        if (!success) return NotFound();
+        return NoContent();
+    }
 
-        if (!success)
+    [HttpPut("tiebreaker/bulk")]
+    [Authorize]
+    public async Task<IActionResult> SetTiebreakerRanksBulk([FromBody] SetTiebreakerRanksBulkDto dto)
+    {
+        await teamService.SetTiebreakerRanksBulkAsync(dto.Ranks.Select(r => (r.Id, (int?)r.Rank)));
+
+        var affectedIds = dto.Ranks.Select(r => r.Id).ToHashSet();
+        var allTeams = await teamService.GetAllAsync();
+        var genders = allTeams.Where(t => affectedIds.Contains(t.id)).Select(t => t.Gender).Distinct();
+
+        foreach (var gender in genders)
         {
-            return NotFound();
+            var leaderboard = await resultService.GetLeaderboardAsync(gender);
+            await hubContext.Clients.Group($"leaderboard-{gender}").SendAsync("LeaderboardUpdated", leaderboard);
         }
 
         return NoContent();
     }
 
+    [HttpPut("{id}/tiebreaker")]
+    [Authorize]
+    public async Task<IActionResult> SetTiebreakerRank(Guid id, [FromBody] SetTiebreakerRankDto dto)
+    {
+        var teams = await teamService.GetAllAsync();
+        var team = teams.FirstOrDefault(t => t.id == id);
+        if (team is null) return NotFound();
+
+        var success = await teamService.SetTiebreakerRankAsync(id, dto.Rank);
+        if (!success) return NotFound();
+
+        var leaderboard = await resultService.GetLeaderboardAsync(team.Gender);
+        await hubContext.Clients.Group($"leaderboard-{team.Gender}").SendAsync("LeaderboardUpdated", leaderboard);
+
+        return NoContent();
+    }
 }
