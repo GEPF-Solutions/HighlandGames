@@ -1,37 +1,34 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
+FROM node:20-slim AS node-build
+WORKDIR /src
+COPY highlandgames.client/package*.json highlandgames.client/
+RUN cd highlandgames.client && npm ci
 
-# This stage is used to build the service project
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS with-node
-RUN apt-get update
-RUN apt-get install curl
-RUN curl -sL https://deb.nodesource.com/setup_20.x | bash
-RUN apt-get -y install nodejs
+FROM mcr.microsoft.com/dotnet/sdk:10.0.102 AS build
+COPY --from=node-build /usr/local/bin/node /usr/local/bin/node
+COPY --from=node-build /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -sf /usr/local/bin/node /usr/local/bin/nodejs \
+ && ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
 
-
-FROM with-node AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["HighlandGames.Server/HighlandGames.Server.csproj", "HighlandGames.Server/"]
 COPY ["highlandgames.client/highlandgames.client.esproj", "highlandgames.client/"]
 RUN dotnet restore "./HighlandGames.Server/HighlandGames.Server.csproj"
 COPY . .
+COPY --from=node-build /src/highlandgames.client/node_modules highlandgames.client/node_modules
 WORKDIR "/src/HighlandGames.Server"
 RUN dotnet build "./HighlandGames.Server.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./HighlandGames.Server.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
