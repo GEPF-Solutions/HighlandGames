@@ -73,17 +73,8 @@ export function DisciplinePage() {
         joinGroup('JoinDiscipline', discId);
         joinGroup('JoinMatchesGroup', discId);
 
-        on('ResultUpdated', (data: unknown) => {
-            const result = data as ResultDto;
-            setResults(prev => {
-                const idx = prev.findIndex(r => r.id === result.id);
-                if (idx >= 0) {
-                    const updated = [...prev];
-                    updated[idx] = result;
-                    return updated;
-                }
-                return [...prev, result];
-            });
+        on('ResultUpdated', () => {
+            resultsApi.getByDiscipline(discId).then(setResults);
         });
 
         on('MatchesUpdated', () => loadMatches());
@@ -91,14 +82,19 @@ export function DisciplinePage() {
         return () => { off('ResultUpdated'); off('MatchesUpdated'); };
     }, [discId]);
 
-    const renderResults = (genderResults: ResultDto[], color: string) =>
-        genderResults.length > 0 ? (
+    const renderResults = (genderResults: ResultDto[], color: string) => {
+        const mt = discipline?.measurementType ?? 'none';
+        const hasRaw = mt !== 'none' && genderResults.some(r => r.rawValue != null);
+        const unit = mt === 'time' ? 'min' : mt === 'distance' ? 'm' : '';
+        if (genderResults.length === 0) return <div style={emptyStyle}>Noch keine Ergebnisse</div>;
+        return (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
                 <thead style={{ background: 'var(--green-dark)' }}>
                     <tr>
                         <th style={thNarrow}>#</th>
                         <th style={thStyle}>Team</th>
                         <th style={thNarrow}>Punkte</th>
+                        {hasRaw && <th style={thNarrow}>Messwert</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -106,40 +102,85 @@ export function DisciplinePage() {
                         <tr key={r.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
                             <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: rankColor(i) }}>{rankMedal(i)}</td>
                             <td style={{ ...tdStyle, color: 'var(--cream)' }}>{r.teamName}</td>
-                            <td style={{ ...tdNarrow, color, fontFamily: 'Cinzel, serif', fontWeight: 700 }}>
-                                {r.points}{r.rawValue != null && <span style={{ fontSize: 11, fontWeight: 400, fontStyle: 'italic', color: 'var(--cream-dark)', opacity: .6, marginLeft: 4 }}>({r.rawValue})</span>}
-                            </td>
+                            <td style={{ ...tdNarrow, color, fontFamily: 'Cinzel, serif', fontWeight: 700 }}>{r.points}</td>
+                            {hasRaw && (
+                                <td style={{ ...tdNarrow }}>
+                                    {r.rawValue
+                                        ? mt === 'duel'
+                                            ? <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, padding: '3px 8px', borderRadius: 2, textTransform: 'uppercase', background: r.rawValue === 'Sieg' ? 'rgba(45,107,71,.25)' : 'rgba(240,230,204,.06)', color: r.rawValue === 'Sieg' ? '#7dc49e' : 'var(--cream-dark)', border: r.rawValue === 'Sieg' ? '1px solid rgba(45,107,71,.4)' : '1px solid rgba(240,230,204,.15)' }}>{r.rawValue}</span>
+                                            : <span style={{ fontStyle: 'italic', color: 'var(--cream-dark)', opacity: .7 }}>{r.rawValue}{unit && <span style={{ fontSize: 11, opacity: .6, marginLeft: 4 }}>{unit}</span>}</span>
+                                        : <span style={{ opacity: .3 }}>—</span>}
+                                </td>
+                            )}
                         </tr>
                     ))}
                 </tbody>
             </table>
-        ) : <div style={emptyStyle}>Noch keine Ergebnisse</div>;
+        );
+    };
 
-    const renderMatches = (matchList: MatchDto[]) =>
-        matchList.length > 0 ? (
+    const renderMatches = (matchList: MatchDto[], genderResults: ResultDto[]) => {
+        const mt = discipline?.measurementType ?? 'none';
+        const rawById = Object.fromEntries(genderResults.map(r => [r.teamId, r.rawValue]));
+        const unit = mt === 'time' ? 'min' : mt === 'distance' ? 'm' : '';
+        const hasDuels = matchList.some(m => m.teamBId);
+        if (matchList.length === 0) return <div style={emptyStyle}>Noch keine Begegnungen</div>;
+
+        const centerCell = (m: MatchDto) => {
+            if (mt === 'time' || mt === 'distance') {
+                const rawA = rawById[m.teamAId];
+                const rawB = m.teamBId ? rawById[m.teamBId] : undefined;
+                const fmt = (v: string | null | undefined) => v
+                    ? <>{v}{unit && <span style={{ fontSize: 11, opacity: .5, marginLeft: 3 }}>{unit}</span>}</>
+                    : <span style={{ opacity: .25 }}>—</span>;
+                if (!hasDuels) return fmt(rawA);
+                return (
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{ flex: 1, textAlign: 'right' }}>{fmt(rawA)}</span>
+                        <span style={{ padding: '0 8px', opacity: m.teamBId ? .3 : 0 }}>:</span>
+                        <span style={{ flex: 1, textAlign: 'left', opacity: m.teamBId ? 1 : 0 }}>
+                            {fmt(rawB)}
+                        </span>
+                    </div>
+                );
+            }
+            if (mt === 'duel') {
+                return <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, color: 'var(--cream-dark)', opacity: .3 }}>vs</span>;
+            }
+            return <span style={{ fontFamily: 'Cinzel, serif', color: 'var(--cream-dark)' }}>
+                {m.teamBId ? `${m.teamAScore ?? '–'} : ${m.teamBScore ?? '–'}` : (m.teamAScore ?? '–')}
+            </span>;
+        };
+
+        return (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
                 <thead style={{ background: 'var(--green-dark)' }}>
                     <tr>
+                        <th style={thNarrow}>#</th>
                         <th style={thStyle}>Team A</th>
-                        <th style={thNarrow}>Score</th>
-                        <th style={thStyle}>Team B</th>
-                        <th style={thNarrow}>Sieger</th>
+                        <th style={thNarrow}>{mt === 'duel' ? 'vs' : mt === 'none' ? 'Score' : 'Messwert'}</th>
+                        {hasDuels && <th style={{ ...thStyle, textAlign: 'right' }}>Team B</th>}
                     </tr>
                 </thead>
                 <tbody>
                     {matchList.map((m, i) => (
                         <tr key={m.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
-                            <td style={{ ...tdStyle, color: m.winnerTeamId === m.teamAId ? 'var(--gold)' : 'var(--cream)' }}>{m.teamAName}</td>
-                            <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: 'var(--cream-dark)' }}>{m.teamAScore ?? '–'} : {m.teamBScore ?? '–'}</td>
-                            <td style={{ ...tdStyle, color: m.winnerTeamId === m.teamBId ? 'var(--gold)' : 'var(--cream)' }}>{m.teamBName}</td>
-                            <td style={{ ...tdNarrow, color: '#7dc49e', fontFamily: 'Cinzel, serif', fontSize: 12 }}>
-                                {m.winnerTeamId ? (m.winnerTeamId === m.teamAId ? m.teamAName : m.teamBName) : '–'}
+                            <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: 'var(--gold)', opacity: .4 }}>{i + 1}</td>
+                            <td style={{ ...tdStyle, color: (!m.teamBId || m.winnerTeamId === m.teamAId) ? 'var(--gold)' : 'var(--cream)' }}>{m.teamAName}</td>
+                            <td style={{ ...tdNarrow, fontStyle: mt === 'time' || mt === 'distance' ? 'italic' : 'normal', color: 'var(--cream-dark)' }}>
+                                {centerCell(m)}
                             </td>
+                            {hasDuels && (
+                                <td style={{ ...tdStyle, textAlign: 'right', color: m.winnerTeamId === m.teamBId ? 'var(--gold)' : 'var(--cream)' }}>
+                                    {m.teamBName ?? <span style={{ opacity: .3 }}>—</span>}
+                                </td>
+                            )}
                         </tr>
                     ))}
                 </tbody>
             </table>
-        ) : <div style={emptyStyle}>Noch keine Begegnungen</div>;
+        );
+    };
 
     if (!discipline) return null;
 
@@ -155,29 +196,38 @@ export function DisciplinePage() {
     return (
         <div className="page-enter page-content" style={{ padding: '60px 40px', width: '100%', maxWidth: 1200, margin: '0 auto', boxSizing: 'border-box' }}>
             <button onClick={() => navigate('/disciplines')} style={{
-                background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer',
-                fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2, marginBottom: 24, padding: 0,
+                background: 'none', border: 'none', outline: 'none', cursor: 'pointer', padding: 0,
+                marginBottom: 28, display: 'flex', alignItems: 'center', gap: 10,
             }}>
-                ← Alle Disziplinen
+                <span style={{ color: 'var(--gold)', fontSize: 16, lineHeight: 1, position: 'relative', top: -2 }}>‹</span>
+                <span style={{ fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--cream-dark)', opacity: .7 }}>
+                    Alle Disziplinen
+                </span>
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 44 }}>{discipline.icon}</span>
-                <div>
-                    <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 5, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 4, display: 'block' }}>
-                        Spiel {discipline.number}
-                    </span>
-                    <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)' }}>
+            <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap' }}>
+                {discipline.icon?.startsWith('/') ? (
+                    <img src={discipline.icon} alt={discipline.name} style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
+                ) : discipline.icon ? (
+                    <span style={{ fontSize: 80, lineHeight: 1, flexShrink: 0 }}>{discipline.icon}</span>
+                ) : null}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 5, textTransform: 'uppercase', color: 'var(--gold)' }}>
+                            Spiel {discipline.number}
+                        </span>
+                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, padding: '3px 10px', borderRadius: 2, textTransform: 'uppercase', flexShrink: 0, ...style }}>
+                            {statusLabel[discipline.status]}
+                        </span>
+                    </div>
+                    <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 'clamp(22px,4vw,44px)', fontWeight: 700, color: 'var(--cream)', margin: 0, hyphens: 'auto', overflowWrap: 'break-word' }}>
                         {discipline.name}
                     </h2>
                 </div>
-                <span style={{ marginLeft: 'auto', fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, padding: '3px 10px', borderRadius: 2, textTransform: 'uppercase', ...style }}>
-                    {statusLabel[discipline.status]}
-                </span>
             </div>
 
             {discipline.description && (
-                <p style={{ fontSize: 17, lineHeight: 1.8, color: 'var(--cream-dark)', opacity: .8, marginBottom: 40, maxWidth: 600 }}>
+                <p style={{ fontSize: 17, lineHeight: 1.8, color: 'var(--cream-dark)', opacity: .8, marginBottom: 24 }}>
                     {discipline.description}
                 </p>
             )}
@@ -187,11 +237,11 @@ export function DisciplinePage() {
             {/* Begegnungen */}
             <div style={{ fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 3, color: 'var(--gold)', marginBottom: 16, textTransform: 'uppercase' }}>Begegnungen</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginBottom: 48 }}>
-                {genders.map(({ label, color, matches }) => (
+                {genders.map(({ label, color, matches, results: res }) => (
                     <div key={label} style={{ flex: '1 1 300px', minWidth: 0 }}>
                         <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, color, marginBottom: 12, textTransform: 'uppercase' }}>{label}</div>
                         <div style={{ display: 'block', width: '100%', border: '1px solid rgba(201,148,58,.2)', overflowX: 'auto' }}>
-                            {renderMatches(matches)}
+                            {renderMatches(matches, res)}
                         </div>
                     </div>
                 ))}

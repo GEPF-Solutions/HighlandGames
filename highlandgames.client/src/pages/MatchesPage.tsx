@@ -46,7 +46,7 @@ export function MatchesPage() {
                         <div
                             key={d.id}
                             onClick={() => navigate('/disciplines/' + d.id)}
-                            style={{ border: '1px solid rgba(201,148,58,.2)', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'border-color .15s', overflow: 'hidden' }}
+                            style={{ border: '1px solid rgba(201,148,58,.2)', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'border-color .15s', overflow: 'hidden', position: 'relative' }}
                             onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,148,58,.55)'; e.currentTarget.style.background = 'rgba(201,148,58,.04)'; }}
                             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,148,58,.2)'; e.currentTarget.style.background = 'transparent'; }}
                         >
@@ -55,19 +55,20 @@ export function MatchesPage() {
 
                             {/* Card header */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '18px 20px' }}>
-                                <span style={{ fontSize: 32, lineHeight: 1, flexShrink: 0 }}>{d.icon}</span>
+                                {d.icon?.startsWith('/') ? (
+                                    <img src={d.icon} alt={d.name} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 3, flexShrink: 0 }} />
+                                ) : d.icon ? (
+                                    <span style={{ fontSize: 32, lineHeight: 1, flexShrink: 0 }}>{d.icon}</span>
+                                ) : null}
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3, color: 'var(--gold)', opacity: .7, marginBottom: 4 }}>
                                         {String(d.number).padStart(2, '0')}
                                     </div>
-                                    <div style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 16, color: 'var(--cream)', marginBottom: d.description ? 4 : 0 }}>
+                                    <div style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 16, color: 'var(--cream)' }}>
                                         {d.name}
                                     </div>
-                                    {d.description && (
-                                        <div style={{ fontSize: 12, color: 'var(--cream-dark)', opacity: .6, fontStyle: 'italic' }}>{d.description}</div>
-                                    )}
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                                <div style={{ position: 'absolute', top: 14, right: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                                     {d.status === 'live' && (
                                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#e07070', animation: 'pulse 1.4s ease infinite', display: 'inline-block' }} />
                                     )}

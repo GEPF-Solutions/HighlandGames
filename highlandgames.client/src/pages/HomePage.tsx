@@ -58,23 +58,25 @@ export function HomePage() {
                         Rheinauweg 63b · Höchst, Vorarlberg
                     </p>
 
-                    <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', width: '100%', maxWidth: 480, margin: '0 auto' }}>
                         <button onClick={() => navigate('/results')} style={{
-                            fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2,
+                            fontFamily: 'Cinzel, serif', fontSize: 14, letterSpacing: 0,
                             textTransform: 'uppercase', padding: '14px 32px', borderRadius: 2,
-                            cursor: 'pointer', border: 'none',
-                            background: 'var(--gold)', color: 'var(--green-dark)',
+                            cursor: 'pointer', border: '1px solid transparent',
+                            background: 'var(--gold)', color: '#000',
                             boxShadow: '0 4px 16px rgba(201,148,58,.3)',
+                            flex: '1 1 0',
                         }}>
                             Zu den Ergebnissen
                         </button>
                         <button onClick={() => navigate('/disciplines')} style={{
-                            fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 2,
+                            fontFamily: 'Cinzel, serif', fontSize: 14, letterSpacing: 0,
                             textTransform: 'uppercase', padding: '14px 32px', borderRadius: 2,
                             cursor: 'pointer', background: 'transparent', color: 'var(--cream)',
                             border: '1px solid rgba(240,230,204,.4)',
+                            flex: '1 1 0',
                         }}>
-                            Begegnungsplan
+                            Zu den Disziplinen
                         </button>
                     </div>
                 </div>

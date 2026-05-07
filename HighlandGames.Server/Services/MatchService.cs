@@ -1,4 +1,4 @@
-﻿using HighlandGames.Server.DTOs;
+using HighlandGames.Server.DTOs;
 using HighlandGames.Server.Hubs;
 using HighlandGames.Server.Models;
 using HighlandGames.Server.Repositories.Abstractions;
@@ -7,113 +7,68 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace HighlandGames.Server.Services;
 
-public class MatchService(IMatchRepository matchRepository, ITeamRepository teamRepository, IHubContext<ResultsHub> hub) : IMatchService
+public class MatchService(IMatchRepository matchRepository, IHubContext<ResultsHub> hub) : IMatchService
 {
+    private static MatchDto ToDto(Match m) => new(
+        m.Id, m.DisciplineId, m.Gender, m.Order,
+        m.TeamAId, m.TeamA?.Name ?? string.Empty,
+        m.TeamBId, m.TeamB?.Name,
+        m.TeamAScore, m.TeamBScore, m.WinnerTeamId
+    );
+
     public async Task<IEnumerable<MatchDto>> GetAllAsync(string? disciplineId, string? gender)
+        => (await matchRepository.GetAllAsync(disciplineId, gender)).Select(ToDto);
+
+    public async Task<MatchDto> CreateAsync(CreateMatchDto dto)
     {
-        return (await matchRepository.GetAllAsync(disciplineId, gender)).Select(m => new MatchDto(
-            m.Id,
-            m.DisciplineId,
-            m.TeamA?.Gender ?? m.TeamB?.Gender ?? string.Empty,
-            m.TeamAId,
-            m.TeamA?.Name ?? string.Empty,
-            m.TeamBId,
-            m.TeamB?.Name ?? string.Empty,
-            m.TeamAScore,
-            m.TeamBScore,
-            m.WinnerTeamId,
-            m.IsManualOverride
-        ));
-    }
-
-    public async Task<IEnumerable<MatchDto>> GenerateAsync(GenerateMatchesDto dto)
-    {
-        // Delete existing non-manual matches for this discipline+gender
-        await matchRepository.DeleteByDisciplineAsync(dto.DisciplineId, dto.Gender);
-
-        var teams = (await teamRepository.GetByGenderAsync(dto.Gender)).ToList();
-
-        // Shuffle for random seeding
-        var rng = new Random();
-        teams = teams.OrderBy(_ => rng.Next()).ToList();
-
-        var matches = new List<Match>();
-
-        for (int i = 0; i + 1 < teams.Count; i += 2)
+        var match = new Match
         {
-            matches.Add(new Match
-            {
-                DisciplineId = dto.DisciplineId,
-                TeamAId = teams[i].Id,
-                TeamBId = teams[i + 1].Id
-            });
-        }
-
-        var created = await matchRepository.CreateManyAsync(matches);
-
+            DisciplineId = dto.DisciplineId,
+            Gender = dto.Gender,
+            TeamAId = dto.TeamAId,
+            TeamBId = dto.TeamBId,
+        };
+        await matchRepository.CreateAsync(match);
+        var reloaded = await matchRepository.GetByIdAsync(match.Id);
         await hub.Clients.Group($"matches-{dto.DisciplineId}").SendAsync("MatchesUpdated", dto.DisciplineId);
-
-        // Reload with navigation properties
-        return (await matchRepository.GetAllAsync(dto.DisciplineId, dto.Gender)).Select(m => new MatchDto(
-            m.Id,
-            m.DisciplineId,
-            m.TeamA?.Gender ?? m.TeamB?.Gender ?? string.Empty,
-            m.TeamAId,
-            m.TeamA?.Name ?? string.Empty,
-            m.TeamBId,
-            m.TeamB?.Name ?? string.Empty,
-            m.TeamAScore,
-            m.TeamBScore,
-            m.WinnerTeamId,
-            m.IsManualOverride
-        ));    
+        return ToDto(reloaded!);
     }
 
     public async Task<MatchDto?> UpdateAsync(Guid id, UpdateMatchDto dto)
     {
         var match = await matchRepository.GetByIdAsync(id);
+        if (match is null) return null;
 
-        if (match is null)
-        {
-            return null;
-        }
-
-        if (dto.TeamAId.HasValue) 
-        { 
-            match.TeamAId = dto.TeamAId.Value; 
-        }
-
-        if (dto.TeamBId.HasValue) 
-        { 
-            match.TeamBId = dto.TeamBId.Value; 
-        }
-
+        if (dto.TeamAId.HasValue) match.TeamAId = dto.TeamAId.Value;
+        if (dto.TeamBId.HasValue) match.TeamBId = dto.TeamBId.Value;
         match.TeamAScore = dto.TeamAScore;
         match.TeamBScore = dto.TeamBScore;
         match.WinnerTeamId = dto.WinnerTeamId;
-        match.IsManualOverride = true;
 
         var updated = await matchRepository.UpdateAsync(match);
-
         await hub.Clients.Group($"matches-{match.DisciplineId}").SendAsync("MatchesUpdated", match.DisciplineId);
-
-        return new MatchDto(
-            updated.Id,
-            updated.DisciplineId,
-            updated.TeamA?.Gender ?? updated.TeamB?.Gender ?? string.Empty,
-            updated.TeamAId,
-            updated.TeamA?.Name ?? string.Empty,
-            updated.TeamBId,
-            updated.TeamB?.Name ?? string.Empty,
-            updated.TeamAScore,
-            updated.TeamBScore,
-            updated.WinnerTeamId,
-            updated.IsManualOverride
-        );
+        return ToDto(updated);
     }
 
-    public Task DeleteByDisciplineAsync(string disciplineId, string gender)
+    public async Task DeleteAsync(Guid id)
     {
-        return matchRepository.DeleteByDisciplineAsync(disciplineId, gender);
+        var match = await matchRepository.GetByIdAsync(id);
+        if (match is not null)
+        {
+            await matchRepository.DeleteAsync(id);
+            await hub.Clients.Group($"matches-{match.DisciplineId}").SendAsync("MatchesUpdated", match.DisciplineId);
+        }
+    }
+
+    public async Task DeleteByDisciplineAsync(string disciplineId, string gender)
+    {
+        await matchRepository.DeleteByDisciplineAsync(disciplineId, gender);
+        await hub.Clients.Group($"matches-{disciplineId}").SendAsync("MatchesUpdated", disciplineId);
+    }
+
+    public async Task ReorderAsync(string disciplineId, string gender, ReorderMatchesDto dto)
+    {
+        await matchRepository.ReorderAsync(disciplineId, gender, dto.Ids);
+        await hub.Clients.Group($"matches-{disciplineId}").SendAsync("MatchesUpdated", disciplineId);
     }
 }

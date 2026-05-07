@@ -1,20 +1,22 @@
-﻿namespace HighlandGames.Server.DTOs;
+namespace HighlandGames.Server.DTOs;
 
 public record MatchDto(
     Guid Id,
     string DisciplineId,
     string Gender,
+    int Order,
     Guid TeamAId,
     string TeamAName,
-    Guid TeamBId,
-    string TeamBName,
+    Guid? TeamBId,
+    string? TeamBName,
     int? TeamAScore,
     int? TeamBScore,
-    Guid? WinnerTeamId,
-    bool IsManualOverride
+    Guid? WinnerTeamId
 );
 
-public record GenerateMatchesDto(string DisciplineId, string Gender);
+public record CreateMatchDto(string DisciplineId, string Gender, Guid TeamAId, Guid? TeamBId);
+
+public record ReorderMatchesDto(List<Guid> Ids);
 
 public record UpdateMatchDto(
     Guid? TeamAId,

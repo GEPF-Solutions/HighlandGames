@@ -50,27 +50,28 @@ export function useResultsPage() {
             else setFLeaderboard(leaderboard);
         });
 
-        on('ResultUpdated', (data: unknown) => {
-            const result = data as ResultDto;
-            setAllDiscResults(prev => {
-                const idx = prev.findIndex(r => r.id === result.id);
-                if (idx >= 0) {
-                    const updated = [...prev];
-                    updated[idx] = result;
-                    return updated;
-                }
-                return [...prev, result];
-            });
-        });
-
-        return () => {
-            off('LeaderboardUpdated');
-            off('ResultUpdated');
-        };
+        return () => { off('LeaderboardUpdated'); };
     }, []);
 
-    const mDiscResults = allDiscResults.filter(r => r.gender === 'm').sort((a, b) => b.points - a.points);
-    const fDiscResults = allDiscResults.filter(r => r.gender === 'f').sort((a, b) => b.points - a.points);
+    useEffect(() => {
+        if (activeTab === 'total') { off('ResultUpdated'); return; }
 
-    return { disciplines, activeTab, setActiveTab, mLeaderboard, fLeaderboard, mDiscResults, fDiscResults, loading };
+        joinGroup('JoinDiscipline', activeTab);
+
+        on('ResultUpdated', () => {
+            resultsApi.getByDiscipline(activeTab).then(setAllDiscResults);
+        });
+
+        return () => { off('ResultUpdated'); };
+    }, [activeTab]);
+
+    const mDiscResults = allDiscResults.filter(r => r.gender === 'm' && r.points > 0).sort((a, b) => b.points - a.points);
+    const fDiscResults = allDiscResults.filter(r => r.gender === 'f' && r.points > 0).sort((a, b) => b.points - a.points);
+
+    return {
+        disciplines, activeTab, setActiveTab,
+        mLeaderboard: mLeaderboard.filter(e => e.totalPoints > 0),
+        fLeaderboard: fLeaderboard.filter(e => e.totalPoints > 0),
+        mDiscResults, fDiscResults, loading,
+    };
 }

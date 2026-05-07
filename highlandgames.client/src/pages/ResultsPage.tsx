@@ -33,33 +33,48 @@ const empty = (
     </div>
 );
 
+const isTied = (_entries: LeaderboardEntryDto[], entry: LeaderboardEntryDto) =>
+    entry.tiebreakerApplied === true;
+
 function LeaderboardTable({ entries, color }: { entries: LeaderboardEntryDto[]; color: string }) {
     if (entries.length === 0) return empty;
+    const hasTiebreaker = entries.some(e => isTied(entries, e));
     return (
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
-            <thead style={{ background: 'var(--green-dark)' }}>
-                <tr>
-                    <th style={thNarrow}>#</th>
-                    <th style={thStyle}>Team</th>
-                    <th style={thNarrow}>Punkte</th>
-                </tr>
-            </thead>
-            <tbody>
-                {entries.map((entry, i) => (
-                    <tr key={entry.teamId} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
-                        <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: rankColor(i) }}>{rankMedal(i)}</td>
-                        <td style={{ ...tdStyle, color: 'var(--cream)' }}>{entry.teamName}</td>
-                        <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', fontWeight: 700, color }}>{entry.totalPoints}</td>
+        <>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
+                <thead style={{ background: 'var(--green-dark)' }}>
+                    <tr>
+                        <th style={thNarrow}>#</th>
+                        <th style={thStyle}>Team</th>
+                        <th style={thNarrow}>Punkte</th>
                     </tr>
-                ))}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {entries.map((entry, i) => (
+                        <tr key={entry.teamId} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.03)' }}>
+                            <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: rankColor(i) }}>{rankMedal(i)}</td>
+                            <td style={{ ...tdStyle, color: 'var(--cream)' }}>
+                                {entry.teamName}
+                                {isTied(entries, entry) && <sup style={{ color: 'var(--gold)', fontSize: 13, marginLeft: 3 }}>*</sup>}
+                            </td>
+                            <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', fontWeight: 700, color }}>{entry.totalPoints}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            {hasTiebreaker && (
+                <div style={{ padding: '8px 18px', fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1.5, color: 'var(--cream-dark)', opacity: .4 }}>
+                    * Reihung durch Stechen bestimmt
+                </div>
+            )}
+        </>
     );
 }
 
-function DiscResultTable({ results, color }: { results: ResultDto[]; color: string }) {
+function DiscResultTable({ results, color, measurementType }: { results: ResultDto[]; color: string; measurementType?: string }) {
     if (results.length === 0) return empty;
     const hasRawValues = results.some(r => r.rawValue != null);
+    const unit = measurementType === 'time' ? 'min' : measurementType === 'distance' ? 'm' : '';
     return (
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
             <thead style={{ background: 'var(--green-dark)' }}>
@@ -76,7 +91,11 @@ function DiscResultTable({ results, color }: { results: ResultDto[]; color: stri
                         <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', color: rankColor(i) }}>{rankMedal(i)}</td>
                         <td style={{ ...tdStyle, color: 'var(--cream)' }}>{r.teamName}</td>
                         <td style={{ ...tdNarrow, fontFamily: 'Cinzel, serif', fontWeight: 700, color }}>{r.points}</td>
-                        {hasRawValues && <td style={{ ...tdNarrow, fontStyle: 'italic', color: 'var(--cream-dark)', opacity: .7 }}>{r.rawValue ?? '—'}</td>}
+                        {hasRawValues && (
+                            <td style={{ ...tdNarrow, fontStyle: 'italic', color: 'var(--cream-dark)', opacity: .7 }}>
+                                {r.rawValue ? <>{r.rawValue}{unit && <span style={{ fontSize: 11, opacity: .6, marginLeft: 4 }}>{unit}</span>}</> : '—'}
+                            </td>
+                        )}
                     </tr>
                 ))}
             </tbody>
@@ -154,7 +173,7 @@ export function ResultsPage() {
                             <div style={{ display: 'block', width: '100%', border: '1px solid rgba(201,148,58,.2)', overflowX: 'auto' }}>
                                 {activeTab === 'total'
                                     ? <LeaderboardTable entries={gi === 0 ? mLeaderboard : fLeaderboard} color={color} />
-                                    : <DiscResultTable results={gi === 0 ? mDiscResults : fDiscResults} color={color} />
+                                    : <DiscResultTable results={gi === 0 ? mDiscResults : fDiscResults} color={color} measurementType={disciplines.find(d => d.id === activeTab)?.measurementType} />
                                 }
                             </div>
                         </div>

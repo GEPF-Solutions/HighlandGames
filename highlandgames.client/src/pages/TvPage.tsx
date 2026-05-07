@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
+import type { LeaderboardEntryDto } from '../api/types';
 import confetti from 'canvas-confetti';
 import { useHomePage } from '../hooks/useHomePage';
 import { Footer } from '../components/Footer';
-import type { LeaderboardEntryDto } from '../api/types';
+
+const isTied = (_entries: LeaderboardEntryDto[], entry: LeaderboardEntryDto) =>
+    entry.tiebreakerApplied === true;
 
 const rankMedal = (i: number) => String(i + 1);
 
@@ -62,8 +65,8 @@ function AnimatedScore({ value, color }: { value: number; color: string }) {
 
     return (
         <span style={{
-            fontFamily: 'Cinzel, serif', fontSize: 32, fontWeight: 700,
-            color, flexShrink: 0, display: 'inline-block', minWidth: 56, textAlign: 'right',
+            fontFamily: 'Cinzel, serif', fontSize: 26, fontWeight: 700,
+            color, flexShrink: 0, display: 'inline-block', minWidth: 50, textAlign: 'right',
         }}>
             {display}
         </span>
@@ -79,11 +82,11 @@ interface ColumnProps {
 
 function LeaderboardColumn({ label, accentColor, entries, shimmerIds }: ColumnProps) {
     return (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '0 48px' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '0 38px' }}>
             <div style={{
-                fontFamily: 'Cinzel, serif', fontSize: 14, letterSpacing: 5,
+                fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 5,
                 textTransform: 'uppercase', color: accentColor,
-                paddingBottom: 16,
+                paddingBottom: 12,
                 borderBottom: `2px solid ${accentColor}`,
             }}>
                 {label}
@@ -92,8 +95,8 @@ function LeaderboardColumn({ label, accentColor, entries, shimmerIds }: ColumnPr
             <div style={{ flex: 1, overflowY: 'auto' }}>
                 {entries.length === 0 ? (
                     <div style={{
-                        padding: '80px 0', textAlign: 'center',
-                        fontFamily: 'Cinzel, serif', fontSize: 16, letterSpacing: 3,
+                        padding: '60px 0', textAlign: 'center',
+                        fontFamily: 'Cinzel, serif', fontSize: 15, letterSpacing: 3,
                         color: 'var(--cream-dark)', opacity: .25,
                     }}>
                         Noch keine Ergebnisse
@@ -102,7 +105,7 @@ function LeaderboardColumn({ label, accentColor, entries, shimmerIds }: ColumnPr
                     <div key={entry.teamId} style={{
                         position: 'relative', overflow: 'hidden',
                         display: 'flex', alignItems: 'center',
-                        padding: '18px 24px',
+                        padding: '13px 22px',
                         borderBottom: '1px solid rgba(240,230,204,.06)',
                         background: i % 2 === 0 ? 'transparent' : 'rgba(240,230,204,.025)',
                     }}>
@@ -118,26 +121,32 @@ function LeaderboardColumn({ label, accentColor, entries, shimmerIds }: ColumnPr
 
                         <span style={{
                             position: 'relative',
-                            width: 56, fontFamily: 'Cinzel, serif',
-                            fontSize: 24, color: rankColor(i),
+                            width: 50, fontFamily: 'Cinzel, serif',
+                            fontSize: 21, color: rankColor(i),
                             flexShrink: 0,
                         }}>
                             {rankMedal(i)}
                         </span>
-                        <span style={{
-                            position: 'relative',
-                            flex: 1, fontFamily: 'Cinzel, serif',
-                            fontSize: 26, color: 'var(--cream)',
-                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        }}>
-                            {entry.teamName}
-                        </span>
+                        <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+                            <span style={{
+                                fontFamily: 'Cinzel, serif', fontSize: 22, color: 'var(--cream)',
+                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block',
+                            }}>
+                                {entry.teamName}
+                                {isTied(entries, entry) && <sup style={{ color: 'var(--gold)', fontSize: 15, marginLeft: 4 }}>*</sup>}
+                            </span>
+                        </div>
                         <div style={{ position: 'relative' }}>
                             <AnimatedScore value={entry.totalPoints} color={accentColor} />
                         </div>
                     </div>
                 ))}
             </div>
+            {entries.some(e => isTied(entries, e)) && (
+                <div style={{ padding: '8px 22px', fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1.5, color: 'var(--cream-dark)', opacity: .35 }}>
+                    * Reihung durch Stechen bestimmt
+                </div>
+            )}
         </div>
     );
 }
@@ -191,16 +200,16 @@ export function TvPage() {
             {/* Top bar */}
             <div style={{
                 display: 'flex', alignItems: 'center',
-                padding: '18px 48px', flexShrink: 0,
+                padding: '12px 40px', flexShrink: 0,
                 borderBottom: '1px solid rgba(201,148,58,.3)',
                 background: 'rgba(0,0,0,.2)',
             }}>
-                <img src="/PWLogo.png" alt="" style={{ width: 52, height: 52, objectFit: 'contain', marginRight: 20 }} />
+                <img src="/PWLogo.png" alt="" style={{ width: 44, height: 44, objectFit: 'contain', marginRight: 16 }} />
                 <div>
-                    <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 5, color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 2 }}>
+                    <div style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 5, color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 2 }}>
                         Pro Western Verein
                     </div>
-                    <div style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 26, color: 'var(--cream)', lineHeight: 1 }}>
+                    <div style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: 22, color: 'var(--cream)', lineHeight: 1 }}>
                         Highland Games 2026
                     </div>
                 </div>
@@ -208,32 +217,38 @@ export function TvPage() {
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
                     {liveDisc && (
                         <div style={{
-                            display: 'flex', alignItems: 'center', gap: 10,
+                            display: 'flex', alignItems: 'center', gap: 8,
                             background: 'rgba(122,28,28,.55)',
                             border: '1px solid rgba(200,60,60,.4)',
-                            padding: '10px 24px', borderRadius: 2,
+                            padding: '8px 20px', borderRadius: 2,
                         }}>
                             <span style={{
-                                width: 8, height: 8, borderRadius: '50%',
+                                width: 7, height: 7, borderRadius: '50%',
                                 background: '#e07070', animation: 'pulse 1.4s ease infinite',
                                 display: 'inline-block', flexShrink: 0,
                             }} />
-                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, color: '#e07070', textTransform: 'uppercase' }}>Live</span>
-                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 20, color: 'var(--cream)', marginLeft: 4 }}>
-                                {liveDisc.icon} {liveDisc.name}
+                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3, color: '#e07070', textTransform: 'uppercase' }}>Live</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'Cinzel, serif', fontSize: 17, color: 'var(--cream)', marginLeft: 4 }}>
+                                {liveDisc.icon?.startsWith('/') ? (
+                                    <img src={liveDisc.icon} alt="" style={{ width: 24, height: 24, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />
+                                ) : liveDisc.icon ? liveDisc.icon : null}
+                                {liveDisc.name}
                             </span>
                         </div>
                     )}
                     {nextDisc && !liveDisc && (
                         <div style={{
-                            display: 'flex', alignItems: 'center', gap: 10,
+                            display: 'flex', alignItems: 'center', gap: 8,
                             background: 'rgba(201,148,58,.1)',
                             border: '1px solid rgba(201,148,58,.3)',
-                            padding: '10px 24px', borderRadius: 2,
+                            padding: '8px 20px', borderRadius: 2,
                         }}>
-                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, color: 'var(--gold)', textTransform: 'uppercase' }}>Als nächstes</span>
-                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 20, color: 'var(--cream)', marginLeft: 4 }}>
-                                {nextDisc.icon} {nextDisc.name}
+                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3, color: 'var(--gold)', textTransform: 'uppercase' }}>Als nächstes</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'Cinzel, serif', fontSize: 17, color: 'var(--cream)', marginLeft: 4 }}>
+                                {nextDisc.icon?.startsWith('/') ? (
+                                    <img src={nextDisc.icon} alt="" style={{ width: 24, height: 24, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />
+                                ) : nextDisc.icon ? nextDisc.icon : null}
+                                {nextDisc.name}
                             </span>
                         </div>
                     )}
@@ -241,7 +256,7 @@ export function TvPage() {
             </div>
 
             {/* Leaderboards */}
-            <div style={{ flex: 1, display: 'flex', overflow: 'hidden', paddingTop: 32, paddingBottom: 16 }}>
+            <div style={{ flex: 1, display: 'flex', overflow: 'hidden', paddingTop: 20, paddingBottom: 12 }}>
                 <LeaderboardColumn
                     label="♂ Männer"
                     accentColor="#7aadff"

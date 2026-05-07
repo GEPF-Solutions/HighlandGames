@@ -2,7 +2,7 @@ export function Footer() {
     return (
         <footer style={{
             background: 'var(--text-dark)',
-            padding: '16px 40px',
+            padding: '16px clamp(16px, 5vw, 40px)',
             borderTop: '1px solid rgba(201,148,58,.2)',
         }}>
             <div style={{

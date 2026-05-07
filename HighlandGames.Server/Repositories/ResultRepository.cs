@@ -39,7 +39,6 @@ namespace HighlandGames.Server.Repositories
             {
                 existing.Points = result.Points;
                 existing.RawValue = result.RawValue;
-                existing.UpdatedAt = DateTime.UtcNow;
             }
 
             await db.SaveChangesAsync();
