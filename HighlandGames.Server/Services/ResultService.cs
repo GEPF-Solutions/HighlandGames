@@ -30,7 +30,7 @@ public class ResultService(IResultRepository resultRepository, ITeamRepository t
         var results = await resultRepository.GetAllAsync();
 
         return teams
-            .Select(t => new LeaderboardEntryDto(t.Id, t.Name, t.Gender, results.Where(r => r.TeamId == t.Id).Sum(r => r.Points), t.TiebreakerRank))
+            .Select(t => new LeaderboardEntryDto(t.Id, t.Name, t.Gender, results.Where(r => r.TeamId == t.Id).Sum(r => r.Points), t.TiebreakerRank, t.TiebreakerApplied))
             .OrderByDescending(e => e.TotalPoints)
             .ThenBy(e => e.TiebreakerRank ?? int.MaxValue);
     }

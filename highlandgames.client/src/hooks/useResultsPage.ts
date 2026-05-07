@@ -65,8 +65,13 @@ export function useResultsPage() {
         return () => { off('ResultUpdated'); };
     }, [activeTab]);
 
-    const mDiscResults = allDiscResults.filter(r => r.gender === 'm').sort((a, b) => b.points - a.points);
-    const fDiscResults = allDiscResults.filter(r => r.gender === 'f').sort((a, b) => b.points - a.points);
+    const mDiscResults = allDiscResults.filter(r => r.gender === 'm' && r.points > 0).sort((a, b) => b.points - a.points);
+    const fDiscResults = allDiscResults.filter(r => r.gender === 'f' && r.points > 0).sort((a, b) => b.points - a.points);
 
-    return { disciplines, activeTab, setActiveTab, mLeaderboard, fLeaderboard, mDiscResults, fDiscResults, loading };
+    return {
+        disciplines, activeTab, setActiveTab,
+        mLeaderboard: mLeaderboard.filter(e => e.totalPoints > 0),
+        fLeaderboard: fLeaderboard.filter(e => e.totalPoints > 0),
+        mDiscResults, fDiscResults, loading,
+    };
 }

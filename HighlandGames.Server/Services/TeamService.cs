@@ -37,4 +37,10 @@ public class TeamService(ITeamRepository teamRepository) : ITeamService
 
     public Task SetTiebreakerRanksBulkAsync(IEnumerable<(Guid Id, int? Rank)> ranks) =>
         teamRepository.SetTiebreakerRanksBulkAsync(ranks);
+
+    public Task SetTiebreakerAppliedAsync(IEnumerable<Guid> ids, bool applied) =>
+        teamRepository.SetTiebreakerAppliedAsync(ids, applied);
+
+    public Task ResetAllTiebreakerAppliedAsync() =>
+        teamRepository.ResetAllTiebreakerAppliedAsync();
 }

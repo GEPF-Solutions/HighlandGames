@@ -238,6 +238,8 @@ export function AdminPage() {
     const [leaderboardPoints, setLeaderboardPoints] = useState<Record<string, number>>({});
     const [tiebreakerGroups, setTiebreakerGroups] = useState<Record<string, TeamDto[]>>({});
     const [tiebreakerDirty, setTiebreakerDirty] = useState(false);
+    const [tiebreakerAppliedMap, setTiebreakerAppliedMap] = useState<Record<string, boolean>>({});
+    const [resetTiebreakerModalOpen, setResetTiebreakerModalOpen] = useState(false);
     const [newDiscName, setNewDiscName] = useState('');
     const [newDiscNumber, setNewDiscNumber] = useState('');
     const [newDiscDesc, setNewDiscDesc] = useState('');
@@ -281,6 +283,7 @@ export function AdminPage() {
             const pts = Object.fromEntries(allLb.map(e => [e.teamId, e.totalPoints]));
             const tbRanks = Object.fromEntries(allLb.map(e => [e.teamId, e.tiebreakerRank ?? null]));
             setLeaderboardPoints(pts);
+            setTiebreakerAppliedMap(Object.fromEntries(allLb.map(e => [e.teamId, e.tiebreakerApplied ?? false])));
             const newGroups: Record<string, TeamDto[]> = {};
             for (const g of ['m', 'f'] as const) {
                 const byPoints = new Map<number, TeamDto[]>();
@@ -506,6 +509,16 @@ export function AdminPage() {
         }
         await teamsApi.setTiebreakerRanksBulk(ranks);
         setTiebreakerDirty(false);
+    };
+
+    const handleApplyTiebreaker = async (teamIds: string[]) => {
+        await teamsApi.setTiebreakerApplied(teamIds);
+        setTiebreakerAppliedMap(prev => ({ ...prev, ...Object.fromEntries(teamIds.map(id => [id, true])) }));
+    };
+
+    const handleResetTiebreakerApplied = async () => {
+        await teamsApi.resetAllTiebreakerApplied();
+        setTiebreakerAppliedMap({});
     };
 
     const handleSetWinner = async (matchId: string, winnerId: string | null) => {
@@ -1156,8 +1169,9 @@ export function AdminPage() {
 
                 return (
                     <div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
-                        <button onClick={handleSaveTiebreaker} disabled={!tiebreakerDirty} style={{ ...btnPrimary, opacity: tiebreakerDirty ? 1 : 0.4 }}>Stechen speichern</button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'stretch', marginBottom: 20, gap: 8 }}>
+                        <button onClick={handleSaveTiebreaker} disabled={!tiebreakerDirty} style={{ ...btnPrimary, opacity: tiebreakerDirty ? 1 : 0.4 }}>Speichern</button>
+                        <button onClick={() => setResetTiebreakerModalOpen(true)} style={{ ...btnOutline, fontSize: 11, color: '#e07070', borderColor: 'rgba(200,60,60,.3)' }}>Zurücksetzen</button>
                     </div>
                     <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                         {tieGroups.map(group => {
@@ -1165,13 +1179,33 @@ export function AdminPage() {
                                 ?? group.ids.map(id => teams.find(t => t.id === id)).filter((t): t is TeamDto => t != null);
                             return (
                                 <div key={group.key} style={{ flex: '1 1 280px', minWidth: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
-                                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: group.gender === 'm' ? '#7aadff' : '#ff8aaa' }}>
-                                            {group.gender === 'm' ? '♂ Männer' : '♀ Frauen'}
-                                        </span>
-                                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, color: 'var(--gold)', opacity: .5 }}>
-                                            {group.pts} Pkt Gleichstand
-                                        </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 10, flexWrap: 'wrap' }}>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: group.gender === 'm' ? '#7aadff' : '#ff8aaa' }}>
+                                                {group.gender === 'm' ? '♂ Männer' : '♀ Frauen'}
+                                            </span>
+                                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, color: 'var(--gold)', opacity: .5 }}>
+                                                {group.pts} Pkt Gleichstand
+                                            </span>
+                                        </div>
+                                        {(() => {
+                                            const groupTeamIds = (tiebreakerGroups[group.key] ?? group.ids.map(id => teams.find(t => t.id === id)!).filter(Boolean)).map(t => t.id);
+                                            const isApplied = groupTeamIds.every(id => tiebreakerAppliedMap[id]);
+                                            return (
+                                                <button
+                                                    onClick={() => handleApplyTiebreaker(groupTeamIds)}
+                                                    disabled={isApplied}
+                                                    style={{
+                                                        ...btnOutline, fontSize: 10, padding: '6px 12px',
+                                                        opacity: isApplied ? 0.4 : 1,
+                                                        color: isApplied ? '#7dc49e' : 'var(--cream-dark)',
+                                                        borderColor: isApplied ? 'rgba(45,107,71,.4)' : 'rgba(240,230,204,.2)',
+                                                    }}
+                                                >
+                                                    {isApplied ? 'Markiert' : 'Markieren'}
+                                                </button>
+                                            );
+                                        })()}
                                     </div>
                                     <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={e => handleTiebreakerDragEnd(e, group.key)}>
                                         <SortableContext items={groupTeams.map(t => t.id)} strategy={verticalListSortingStrategy}>
@@ -1195,6 +1229,14 @@ export function AdminPage() {
                     </div>
                 );
             })()}
+
+            {resetTiebreakerModalOpen && (
+                <ConfirmModal
+                    message="Alle Stechen-Markierungen zurücksetzen?"
+                    onConfirm={() => { handleResetTiebreakerApplied(); setResetTiebreakerModalOpen(false); }}
+                    onCancel={() => setResetTiebreakerModalOpen(false)}
+                />
+            )}
 
             {deleteTarget && (
                 <ConfirmModal

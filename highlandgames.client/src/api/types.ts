@@ -37,6 +37,7 @@ export interface LeaderboardEntryDto {
     gender: Gender;
     totalPoints: number;
     tiebreakerRank?: number | null;
+    tiebreakerApplied?: boolean;
 }
 
 export interface CreateTeamDto {

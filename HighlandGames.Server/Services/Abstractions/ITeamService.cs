@@ -10,4 +10,6 @@ public interface ITeamService
     Task<bool> DeleteAsync(Guid id);
     Task<bool> SetTiebreakerRankAsync(Guid id, int? rank);
     Task SetTiebreakerRanksBulkAsync(IEnumerable<(Guid Id, int? Rank)> ranks);
+    Task SetTiebreakerAppliedAsync(IEnumerable<Guid> ids, bool applied);
+    Task ResetAllTiebreakerAppliedAsync();
 }

@@ -57,4 +57,19 @@ public class TeamRepository(AppDbContext db) : ITeamRepository
         }
         await db.SaveChangesAsync();
     }
+
+    public async Task SetTiebreakerAppliedAsync(IEnumerable<Guid> ids, bool applied)
+    {
+        var idSet = ids.ToHashSet();
+        var teams = await db.Teams.Where(t => idSet.Contains(t.Id)).ToListAsync();
+        foreach (var team in teams) team.TiebreakerApplied = applied;
+        await db.SaveChangesAsync();
+    }
+
+    public async Task ResetAllTiebreakerAppliedAsync()
+    {
+        var teams = await db.Teams.Where(t => t.TiebreakerApplied).ToListAsync();
+        foreach (var team in teams) team.TiebreakerApplied = false;
+        await db.SaveChangesAsync();
+    }
 }

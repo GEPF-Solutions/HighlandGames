@@ -54,5 +54,10 @@ export function useHomePage() {
     const liveDisc = disciplines.find(d => d.status === 'live');
     const nextDisc = disciplines.find(d => d.status === 'next');
 
-    return { disciplines, mLeaderboard, fLeaderboard, liveDisc, nextDisc, loading };
+    return {
+        disciplines,
+        mLeaderboard: mLeaderboard.filter(e => e.totalPoints > 0),
+        fLeaderboard: fLeaderboard.filter(e => e.totalPoints > 0),
+        liveDisc, nextDisc, loading,
+    };
 }

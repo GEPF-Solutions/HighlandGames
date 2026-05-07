@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
+import type { LeaderboardEntryDto } from '../api/types';
 import confetti from 'canvas-confetti';
 import { useHomePage } from '../hooks/useHomePage';
 import { Footer } from '../components/Footer';
-import type { LeaderboardEntryDto } from '../api/types';
+
+const isTied = (_entries: LeaderboardEntryDto[], entry: LeaderboardEntryDto) =>
+    entry.tiebreakerApplied === true;
 
 const rankMedal = (i: number) => String(i + 1);
 
@@ -124,20 +127,26 @@ function LeaderboardColumn({ label, accentColor, entries, shimmerIds }: ColumnPr
                         }}>
                             {rankMedal(i)}
                         </span>
-                        <span style={{
-                            position: 'relative',
-                            flex: 1, fontFamily: 'Cinzel, serif',
-                            fontSize: 22, color: 'var(--cream)',
-                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        }}>
-                            {entry.teamName}
-                        </span>
+                        <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+                            <span style={{
+                                fontFamily: 'Cinzel, serif', fontSize: 22, color: 'var(--cream)',
+                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block',
+                            }}>
+                                {entry.teamName}
+                                {isTied(entries, entry) && <sup style={{ color: 'var(--gold)', fontSize: 15, marginLeft: 4 }}>*</sup>}
+                            </span>
+                        </div>
                         <div style={{ position: 'relative' }}>
                             <AnimatedScore value={entry.totalPoints} color={accentColor} />
                         </div>
                     </div>
                 ))}
             </div>
+            {entries.some(e => isTied(entries, e)) && (
+                <div style={{ padding: '8px 22px', fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1.5, color: 'var(--cream-dark)', opacity: .35 }}>
+                    * Reihung durch Stechen bestimmt
+                </div>
+            )}
         </div>
     );
 }

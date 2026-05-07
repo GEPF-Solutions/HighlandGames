@@ -196,10 +196,13 @@ export function DisciplinePage() {
     return (
         <div className="page-enter page-content" style={{ padding: '60px 40px', width: '100%', maxWidth: 1200, margin: '0 auto', boxSizing: 'border-box' }}>
             <button onClick={() => navigate('/disciplines')} style={{
-                background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer',
-                fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2, marginBottom: 24, padding: 0,
+                background: 'none', border: 'none', outline: 'none', cursor: 'pointer', padding: 0,
+                marginBottom: 28, display: 'flex', alignItems: 'center', gap: 10,
             }}>
-                ← Alle Disziplinen
+                <span style={{ color: 'var(--gold)', fontSize: 16, lineHeight: 1, position: 'relative', top: -2 }}>‹</span>
+                <span style={{ fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--cream-dark)', opacity: .7 }}>
+                    Alle Disziplinen
+                </span>
             </button>
 
             <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap' }}>
