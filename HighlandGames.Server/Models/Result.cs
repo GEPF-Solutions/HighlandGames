@@ -7,7 +7,6 @@ public class Result
     public required string DisciplineId { get; set; }
     public int Points { get; set; }
     public string? RawValue { get; set; }
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public Team? Team { get; set; }
     public Discipline? Discipline { get; set; }

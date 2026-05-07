@@ -11,17 +11,17 @@ public class ResultService(IResultRepository resultRepository, ITeamRepository t
 {
     public async Task<IEnumerable<ResultDto>> GetAllAsync()
     {
-        return (await resultRepository.GetAllAsync()).Select(r => new ResultDto(r.Id, r.TeamId, r.Team?.Name ?? string.Empty, r.Team?.Gender ?? string.Empty, r.DisciplineId, r.Points, r.RawValue, r.UpdatedAt));
+        return (await resultRepository.GetAllAsync()).Select(r => new ResultDto(r.Id, r.TeamId, r.Team?.Name ?? string.Empty, r.Team?.Gender ?? string.Empty, r.DisciplineId, r.Points, r.RawValue));
     }
 
     public async Task<IEnumerable<ResultDto>> GetByDisciplineAsync(string disciplineId)
     {
-        return (await resultRepository.GetByDisciplineAsync(disciplineId)).Select(r => new ResultDto(r.Id, r.TeamId, r.Team?.Name ?? string.Empty, r.Team?.Gender ?? string.Empty, r.DisciplineId, r.Points, r.RawValue, r.UpdatedAt));
+        return (await resultRepository.GetByDisciplineAsync(disciplineId)).Select(r => new ResultDto(r.Id, r.TeamId, r.Team?.Name ?? string.Empty, r.Team?.Gender ?? string.Empty, r.DisciplineId, r.Points, r.RawValue));
     }
 
     public async Task<IEnumerable<ResultDto>> GetByTeamAsync(Guid teamId)
     {
-        return (await resultRepository.GetByTeamAsync(teamId)).Select(r => new ResultDto(r.Id, r.TeamId, r.Team?.Name ?? string.Empty, r.Team?.Gender ?? string.Empty, r.DisciplineId, r.Points, r.RawValue, r.UpdatedAt));
+        return (await resultRepository.GetByTeamAsync(teamId)).Select(r => new ResultDto(r.Id, r.TeamId, r.Team?.Name ?? string.Empty, r.Team?.Gender ?? string.Empty, r.DisciplineId, r.Points, r.RawValue));
     }
 
     public async Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(string gender)
@@ -46,7 +46,7 @@ public class ResultService(IResultRepository resultRepository, ITeamRepository t
         };
 
         var upsert = await resultRepository.UpsertAsync(result);
-        var resultDto = new ResultDto(upsert.Id, upsert.TeamId, upsert.Team?.Name ?? string.Empty, upsert.Team?.Gender ?? string.Empty, upsert.DisciplineId, upsert.Points, upsert.RawValue, upsert.UpdatedAt);
+        var resultDto = new ResultDto(upsert.Id, upsert.TeamId, upsert.Team?.Name ?? string.Empty, upsert.Team?.Gender ?? string.Empty, upsert.DisciplineId, upsert.Points, upsert.RawValue);
 
         // Push to all clients watching this discipline
         await hubContext.Clients.Group($"discipline-{dto.DisciplineId}").SendAsync("ResultUpdated", resultDto);

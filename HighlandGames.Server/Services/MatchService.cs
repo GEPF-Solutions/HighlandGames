@@ -13,7 +13,7 @@ public class MatchService(IMatchRepository matchRepository, IHubContext<ResultsH
         m.Id, m.DisciplineId, m.Gender, m.Order,
         m.TeamAId, m.TeamA?.Name ?? string.Empty,
         m.TeamBId, m.TeamB?.Name,
-        m.TeamAScore, m.TeamBScore, m.WinnerTeamId, m.IsManualOverride
+        m.TeamAScore, m.TeamBScore, m.WinnerTeamId
     );
 
     public async Task<IEnumerable<MatchDto>> GetAllAsync(string? disciplineId, string? gender)
@@ -44,7 +44,6 @@ public class MatchService(IMatchRepository matchRepository, IHubContext<ResultsH
         match.TeamAScore = dto.TeamAScore;
         match.TeamBScore = dto.TeamBScore;
         match.WinnerTeamId = dto.WinnerTeamId;
-        match.IsManualOverride = true;
 
         var updated = await matchRepository.UpdateAsync(match);
         await hub.Clients.Group($"matches-{match.DisciplineId}").SendAsync("MatchesUpdated", match.DisciplineId);

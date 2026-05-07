@@ -11,7 +11,6 @@ public class Match
     public int? TeamAScore { get; set; }
     public int? TeamBScore { get; set; }
     public Guid? WinnerTeamId { get; set; }
-    public bool IsManualOverride { get; set; } = false;
 
     public Discipline? Discipline { get; set; }
     public Team? TeamA { get; set; }

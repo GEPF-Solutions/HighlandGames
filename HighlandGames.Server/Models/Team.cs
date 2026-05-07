@@ -7,5 +7,4 @@ public class Team
     public required string Gender { get; set; } // "m" | "f"
     public int? TiebreakerRank { get; set; }
     public bool TiebreakerApplied { get; set; } = false;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

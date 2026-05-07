@@ -11,8 +11,7 @@ public record MatchDto(
     string? TeamBName,
     int? TeamAScore,
     int? TeamBScore,
-    Guid? WinnerTeamId,
-    bool IsManualOverride
+    Guid? WinnerTeamId
 );
 
 public record CreateMatchDto(string DisciplineId, string Gender, Guid TeamAId, Guid? TeamBId);
