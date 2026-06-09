@@ -52,7 +52,7 @@ export function HomePage() {
                     </div>
 
                     <p style={{ fontFamily: 'Cinzel, serif', fontSize: 15, letterSpacing: 3, color: 'var(--cream-dark)', marginBottom: 6 }}>
-                        Samstag, 13. Juni 2026
+                        Samstag, 13. Juni 2026 · 10:00 Uhr
                     </p>
                     <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 19, fontStyle: 'italic', color: 'var(--cream-dark)', opacity: .8, marginBottom: 36 }}>
                         Rheinauweg 63b · Höchst, Vorarlberg
