@@ -14,8 +14,14 @@ namespace HighlandGames.Server;
 public class Program
 {
     public static void Main(string[] args)
-    {      
+    {
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
         var builder = WebApplication.CreateBuilder(args);
+
+        var assetsPath = Path.Combine(builder.Environment.ContentRootPath, "Assets");
+        PdfSharpCore.Fonts.GlobalFontSettings.FontResolver =
+            new HighlandGames.Server.Services.HighlandFontResolver(assetsPath);
 
         builder.Services.AddControllers();
         builder.Services.AddSignalR();
@@ -48,6 +54,7 @@ public class Program
             });
 
         builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<IPdfService, PdfService>();
 
         builder.Services.AddCors(options =>
         {
