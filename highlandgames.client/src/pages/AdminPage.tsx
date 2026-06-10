@@ -17,7 +17,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Separator } from '../components/Separator';
 import { ConfirmModal } from '../components/ConfirmModal';
 
-type AdminTab = 'disciplines' | 'matches' | 'teams' | 'results' | 'tiebreaker';
+type AdminTab = 'disciplines' | 'matches' | 'teams' | 'results' | 'tiebreaker' | 'downloads';
 
 const tiebreakerRankColor = (i: number) =>
     i === 0 ? '#f0c040' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : 'rgba(240,230,204,.4)';
@@ -649,7 +649,23 @@ export function AdminPage() {
         { id: 'matches', label: 'Begegnungen' },
         { id: 'results', label: 'Ergebnisse' },
         { id: 'tiebreaker', label: 'Stechen' },
+        { id: 'downloads', label: 'Downloads' },
     ];
+
+    const downloadPdf = async (path: string, filename: string) => {
+        const token = localStorage.getItem('hg_token');
+        const response = await fetch(`/api${path}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!response.ok) return;
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
 
     const tabBar = (
         <>
@@ -1226,6 +1242,68 @@ export function AdminPage() {
                             );
                         })}
                     </div>
+                    </div>
+                );
+            })()}
+
+            {/* Downloads */}
+            {activeTab === 'downloads' && (() => {
+                const heading: React.CSSProperties = {
+                    fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3,
+                    textTransform: 'uppercase' as const, color: 'var(--gold)', opacity: .6,
+                    display: 'block', marginBottom: 6, marginTop: 28,
+                };
+                const list: React.CSSProperties = {
+                    border: '1px solid rgba(240,230,204,.1)', overflow: 'hidden',
+                };
+                const dlRow = (label: string, path: string, filename: string, last = false): React.ReactNode => (
+                    <div style={{
+                        display: 'flex', alignItems: 'center', padding: '11px 16px',
+                        borderBottom: last ? 'none' : '1px solid rgba(240,230,204,.07)',
+                        background: 'transparent',
+                    }}>
+                        <span style={{ flex: 1, fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--cream)' }}>
+                            {label}
+                        </span>
+                        <button
+                            onClick={() => downloadPdf(path, filename)}
+                            title="Download"
+                            style={{
+                                background: 'none', border: 'none', cursor: 'pointer',
+                                color: 'var(--cream-dark)', opacity: .5, padding: '4px 6px',
+                                display: 'flex', alignItems: 'center', transition: 'opacity .15s',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.opacity = '1'; }}
+                            onMouseLeave={e => { e.currentTarget.style.opacity = '.5'; }}
+                        >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 5 }}>
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' as const }}>Download</span>
+                        </button>
+                    </div>
+                );
+                return (
+                    <div>
+                        <span style={{ ...heading, marginTop: 0 }}>Begegnungslisten</span>
+                        <div style={list}>
+                            {disciplines.map((d, i) =>
+                                dlRow(d.name, `/pdf/matches/${d.id}`, `${d.id}.pdf`, i === disciplines.length - 1)
+                            )}
+                        </div>
+
+                        <span style={heading}>Ergebnisliste</span>
+                        <div style={list}>
+                            {dlRow('Mit Hintergrund', '/pdf/results', 'Ergebnisse.pdf')}
+                            {dlRow('Ohne Hintergrund', '/pdf/results?textOnly=true', 'Ergebnisse.pdf', true)}
+                        </div>
+
+                        <span style={heading}>Urkunden</span>
+                        <div style={list}>
+                            {dlRow('Mit Hintergrund', '/pdf/certificates', 'Urkunden.pdf')}
+                            {dlRow('Ohne Hintergrund', '/pdf/certificates?textOnly=true', 'Urkunden.pdf', true)}
+                        </div>
                     </div>
                 );
             })()}
