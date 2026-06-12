@@ -873,7 +873,7 @@ export function AdminPage() {
                                 <div onClick={e => e.stopPropagation()} style={{ background: 'var(--green-dark)', border: '1px solid rgba(201,148,58,.3)', borderRadius: 2, width: '100%', maxWidth: 440, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
                                     <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid rgba(240,230,204,.07)', flexShrink: 0 }}>
                                         <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 6 }}>
-                                            Begegnung — {matchGender === 'm' ? '♂ Männer' : '♀ Frauen'}
+                                            Begegnung — {matchGender === 'm' ? '♂ Gentlemen' : '♀ Ladies'}
                                         </div>
                                         <div style={{ fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 1, color: selectedTeamA ? 'var(--gold)' : 'var(--cream-dark)', opacity: selectedTeamA ? .9 : .5 }}>
                                             {selectedTeamA
@@ -946,7 +946,7 @@ export function AdminPage() {
                                 <div key={g} style={{ flex: '1 1 320px', minWidth: 0 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                                         <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: g === 'm' ? '#7aadff' : '#ff8aaa' }}>
-                                            {g === 'm' ? '♂ Männer' : '♀ Frauen'}
+                                            {g === 'm' ? '♂ Gentlemen' : '♀ Ladies'}
                                         </span>
                                         <button onClick={() => { setMatchGender(g); setMatchModalOpen(true); }} style={btnPrimary}>+ Begegnung</button>
                                     </div>
@@ -1025,7 +1025,7 @@ export function AdminPage() {
                                                 color: newTeamGender === g ? 'var(--gold)' : 'var(--cream-dark)',
                                                 transition: 'all .15s',
                                             }}>
-                                                {g === 'm' ? '♂ Männer' : '♀ Frauen'}
+                                                {g === 'm' ? '♂ Gentlemen' : '♀ Ladies'}
                                             </button>
                                         ))}
                                     </div>
@@ -1053,7 +1053,7 @@ export function AdminPage() {
                         return (
                             <div key={g} style={{ flex: '1 1 280px', minWidth: 0 }}>
                                 <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: g === 'm' ? '#7aadff' : '#ff8aaa', marginBottom: 10 }}>
-                                    {g === 'm' ? '♂ Männer' : '♀ Frauen'} <span style={{ opacity: .5 }}>({gTeams.length})</span>
+                                    {g === 'm' ? '♂ Gentlemen' : '♀ Ladies'} <span style={{ opacity: .5 }}>({gTeams.length})</span>
                                 </div>
                                 <div style={{ border: '1px solid rgba(201,148,58,.2)', overflow: 'hidden' }}>
                                     {gTeams.length === 0 ? (
@@ -1153,7 +1153,7 @@ export function AdminPage() {
                             {(['m', 'f'] as const).map(g => (
                                 <div key={g} style={{ flex: '1 1 320px', minWidth: 0 }}>
                                     <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: g === 'm' ? '#7aadff' : '#ff8aaa', marginBottom: 10 }}>
-                                        {g === 'm' ? '♂ Männer' : '♀ Frauen'}
+                                        {g === 'm' ? '♂ Gentlemen' : '♀ Ladies'}
                                     </div>
                                     {renderTeamList(sortedFor(g))}
                                 </div>
@@ -1198,7 +1198,7 @@ export function AdminPage() {
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 10, flexWrap: 'wrap' }}>
                                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
                                             <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: group.gender === 'm' ? '#7aadff' : '#ff8aaa' }}>
-                                                {group.gender === 'm' ? '♂ Männer' : '♀ Frauen'}
+                                                {group.gender === 'm' ? '♂ Gentlemen' : '♀ Ladies'}
                                             </span>
                                             <span style={{ fontFamily: 'Cinzel, serif', fontSize: 11, color: 'var(--gold)', opacity: .5 }}>
                                                 {group.pts} Pkt Gleichstand
@@ -1295,14 +1295,14 @@ export function AdminPage() {
 
                         <span style={heading}>Ergebnisliste</span>
                         <div style={list}>
-                            {dlRow('Mit Hintergrund', '/pdf/results', 'Ergebnisse.pdf')}
-                            {dlRow('Ohne Hintergrund', '/pdf/results?textOnly=true', 'Ergebnisse.pdf', true)}
+                            {dlRow('Digital', '/pdf/results', 'Ergebnisse.pdf')}
+                            {dlRow('Druck', '/pdf/results?printMode=true', 'Ergebnisse.pdf', true)}
                         </div>
 
                         <span style={heading}>Urkunden</span>
                         <div style={list}>
-                            {dlRow('Mit Hintergrund', '/pdf/certificates', 'Urkunden.pdf')}
-                            {dlRow('Ohne Hintergrund', '/pdf/certificates?textOnly=true', 'Urkunden.pdf', true)}
+                            {dlRow('Digital', '/pdf/certificates', 'Urkunden.pdf')}
+                            {dlRow('Druck', '/pdf/certificates?printMode=true', 'Urkunden.pdf', true)}
                         </div>
                     </div>
                 );

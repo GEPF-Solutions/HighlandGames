@@ -16,14 +16,14 @@ public class PdfService : IPdfService
     private readonly IDisciplineService _disciplineService;
     private readonly string _assetsPath;
 
-    private const double PageWidth = 595.28;
-    private const double PageHeight = 841.89;
-    private const double ContentLeft = 70;
-    private const double ContentWidth = 515;
-
-    // Y where white content area begins for each template
-    private const double TitleContentY = 152;
-    private const double CertContentY = 210;
+    // Both modes are A4 (595.32 × 841.92 pt) with identical content positions.
+    // Positions derived from template PDF image transform matrices.
+    private const double PageWidth     = 595.32;
+    private const double PageHeight    = 841.92;
+    private const double ContentLeft   = 79.56;   // left edge of left logo
+    private const double ContentWidth  = 481.08;  // right edge of right logo (560.64) - ContentLeft
+    private const double TitleContentY = 207;     // just below header graphic (bottom at 203.58 pt)
+    private const double CertContentY  = 207;
 
     public PdfService(
         IMatchService matchService,
@@ -71,9 +71,9 @@ public class PdfService : IPdfService
 
                 page.Content().PaddingTop(10).Column(mainCol =>
                 {
-                    RenderGenderSection(mainCol, "Männer", matchesM);
+                    RenderGenderSection(mainCol, "Gentlemen", matchesM);
                     mainCol.Item().Height(14);
-                    RenderGenderSection(mainCol, "Frauen", matchesF);
+                    RenderGenderSection(mainCol, "Ladies", matchesF);
                 });
 
                 page.Footer().AlignCenter()
@@ -135,20 +135,16 @@ public class PdfService : IPdfService
 
     // ── Combined results (both genders) ──────────────────────────────────────
 
-    private const double ResultsLeft = ContentLeft;
-    private const double ResultsWidth = PageWidth - ContentLeft * 2;
-    private const double ResultsStartY = TitleContentY + 30;
-
-    public async Task<byte[]> GenerateCombinedResultsAsync(bool textOnly)
+    public async Task<byte[]> GenerateCombinedResultsAsync(bool printMode)
     {
         var ladies = (await _resultService.GetLeaderboardAsync("f")).ToList();
-        var gents = (await _resultService.GetLeaderboardAsync("m")).ToList();
+        var gents  = (await _resultService.GetLeaderboardAsync("m")).ToList();
 
         using var outputDoc = new PdfDocument();
-
         PdfDocument? template = null;
         PdfPage page;
-        if (!textOnly)
+
+        if (!printMode)
         {
             var templatePath = Path.Combine(_assetsPath, "Ranking-Template.pdf");
             template = PdfReader.Open(templatePath, PdfDocumentOpenMode.Import);
@@ -157,7 +153,7 @@ public class PdfService : IPdfService
         else
         {
             page = outputDoc.AddPage();
-            page.Width = XUnit.FromPoint(PageWidth);
+            page.Width  = XUnit.FromPoint(PageWidth);
             page.Height = XUnit.FromPoint(PageHeight);
         }
 
@@ -166,10 +162,7 @@ public class PdfService : IPdfService
             using var gfx = XGraphics.FromPdfPage(page);
             DrawCombinedResults(gfx, ladies, gents);
         }
-        finally
-        {
-            template?.Dispose();
-        }
+        finally { template?.Dispose(); }
 
         using var stream = new MemoryStream();
         outputDoc.Save(stream);
@@ -180,35 +173,37 @@ public class PdfService : IPdfService
         List<LeaderboardEntryDto> ladies, List<LeaderboardEntryDto> gents)
     {
         var uo = new XPdfFontOptions(PdfFontEncoding.Unicode);
-        var sectionFont = new XFont("Playfair Display", 20, XFontStyle.Bold, uo);
-        var colFont = new XFont("Playfair Display", 12, XFontStyle.Bold, uo);
-        var rowFont = new XFont("Playfair Display", 13, XFontStyle.Regular, uo);
-        var numFont = new XFont("Playfair Display", 13, XFontStyle.Bold, uo);
+        var sectionFont = new XFont("Playfair Display", 23, XFontStyle.Bold,    uo);
+        var colFont     = new XFont("Playfair Display", 14, XFontStyle.Bold,    uo);
+        var rowFont     = new XFont("Playfair Display", 15, XFontStyle.Regular, uo);
+        var numFont     = new XFont("Playfair Display", 15, XFontStyle.Bold,    uo);
 
-        double y = ResultsStartY;
-        DrawResultsSection(gfx, "Ladies", ladies, ref y, sectionFont, colFont, rowFont, numFont);
+        double y = TitleContentY + 30;
+        DrawResultsSection(gfx, "Ladies",    ladies, ref y, sectionFont, colFont, rowFont, numFont);
         y += 18;
-        DrawResultsSection(gfx, "Gentlemen", gents, ref y, sectionFont, colFont, rowFont, numFont);
+        DrawResultsSection(gfx, "Gentlemen", gents,  ref y, sectionFont, colFont, rowFont, numFont);
     }
 
     private void DrawResultsSection(XGraphics gfx, string title,
         List<LeaderboardEntryDto> entries, ref double y,
         XFont sectionFont, XFont colFont, XFont rowFont, XFont numFont)
     {
+        double left  = ContentLeft;
+        double width = ContentWidth;
+
         gfx.DrawString(title, sectionFont, XBrushes.Black,
-            new XRect(ResultsLeft, y, ResultsWidth, 28), XStringFormats.TopLeft);
+            new XRect(left, y, width, 28), XStringFormats.TopLeft);
         y += 32;
 
-        gfx.DrawString("#", colFont, XBrushes.Black,
-            new XRect(ResultsLeft, y, 24, 16), XStringFormats.TopLeft);
-        gfx.DrawString("Clan", colFont, XBrushes.Black,
-            new XRect(ResultsLeft + 28, y, ResultsWidth - 28 - 60, 16), XStringFormats.TopLeft);
+        gfx.DrawString("#",      colFont, XBrushes.Black,
+            new XRect(left,      y, 24,              16), XStringFormats.TopLeft);
+        gfx.DrawString("Clan",   colFont, XBrushes.Black,
+            new XRect(left + 28, y, width - 28 - 60, 16), XStringFormats.TopLeft);
         gfx.DrawString("Points", colFont, XBrushes.Black,
-            new XRect(ResultsLeft, y, ResultsWidth, 16), XStringFormats.TopRight);
+            new XRect(left,      y, width,            16), XStringFormats.TopRight);
         y += 20;
 
-        gfx.DrawLine(new XPen(XColor.FromArgb(180, 180, 180), 0.5),
-            ResultsLeft, y, ResultsLeft + ResultsWidth, y);
+        gfx.DrawLine(new XPen(XColor.FromArgb(180, 180, 180), 0.5), left, y, left + width, y);
         y += 6;
 
         const double rowH = 22;
@@ -216,26 +211,26 @@ public class PdfService : IPdfService
         {
             var e = entries[i];
             gfx.DrawString($"{i + 1}", numFont, XBrushes.Black,
-                new XRect(ResultsLeft, y, 24, rowH), XStringFormats.TopLeft);
+                new XRect(left,      y, 24,              rowH), XStringFormats.TopLeft);
             gfx.DrawString(e.TeamName, rowFont, XBrushes.Black,
-                new XRect(ResultsLeft + 28, y, ResultsWidth - 28 - 60, rowH), XStringFormats.TopLeft);
+                new XRect(left + 28, y, width - 28 - 60, rowH), XStringFormats.TopLeft);
             gfx.DrawString(e.TotalPoints.ToString(), rowFont, XBrushes.Black,
-                new XRect(ResultsLeft, y, ResultsWidth, rowH), XStringFormats.TopRight);
+                new XRect(left,      y, width,            rowH), XStringFormats.TopRight);
             y += rowH;
         }
     }
 
-    // ── Certificates (Certificate-Template.pdf or blank) ────────────────────
+    // ── Certificates ─────────────────────────────────────────────────────────
 
-    public async Task<byte[]> GenerateCertificatesAsync(bool textOnly)
+    public async Task<byte[]> GenerateCertificatesAsync(bool printMode)
     {
         var ladies = (await _resultService.GetLeaderboardAsync("f")).ToList();
-        var gents = (await _resultService.GetLeaderboardAsync("m")).ToList();
+        var gents  = (await _resultService.GetLeaderboardAsync("m")).ToList();
 
         using var outputDoc = new PdfDocument();
-
         PdfDocument? template = null;
-        if (!textOnly)
+
+        if (!printMode)
         {
             var templatePath = Path.Combine(_assetsPath, "Certificate-Template.pdf");
             template = PdfReader.Open(templatePath, PdfDocumentOpenMode.Import);
@@ -248,12 +243,12 @@ public class PdfService : IPdfService
                 for (int i = 0; i < entries.Count; i++)
                 {
                     PdfPage page;
-                    if (!textOnly)
+                    if (!printMode)
                         page = outputDoc.AddPage(template!.Pages[0]);
                     else
                     {
                         page = outputDoc.AddPage();
-                        page.Width = XUnit.FromPoint(PageWidth);
+                        page.Width  = XUnit.FromPoint(PageWidth);
                         page.Height = XUnit.FromPoint(PageHeight);
                     }
                     using var gfx = XGraphics.FromPdfPage(page);
@@ -263,12 +258,9 @@ public class PdfService : IPdfService
             }
 
             AddPages(ladies, "Ladies");
-            AddPages(gents, "Gentlemen");
+            AddPages(gents,  "Gentlemen");
         }
-        finally
-        {
-            template?.Dispose();
-        }
+        finally { template?.Dispose(); }
 
         using var stream = new MemoryStream();
         outputDoc.Save(stream);
@@ -279,11 +271,11 @@ public class PdfService : IPdfService
         string genderLabel, int totalPoints)
     {
         var uo = new XPdfFontOptions(PdfFontEncoding.Unicode);
-        var placeFont  = new XFont("Playfair Display", 48, XFontStyle.Bold,    uo);
-        var genderFont = new XFont("Playfair Display", 22, XFontStyle.Regular, uo);
-        var labelFont  = new XFont("Playfair Display", 22, XFontStyle.Regular, uo);
-        var nameFont   = new XFont("Playfair Display", 48, XFontStyle.Bold,    uo);
-        var pointsFont = new XFont("Playfair Display", 22, XFontStyle.Regular, uo);
+        var placeFont  = new XFont("Playfair Display", 42, XFontStyle.Bold,    uo);
+        var genderFont = new XFont("Playfair Display", 19, XFontStyle.Regular, uo);
+        var labelFont  = new XFont("Playfair Display", 19, XFontStyle.Regular, uo);
+        var nameFont   = new XFont("Playfair Display", 42, XFontStyle.Bold,    uo);
+        var pointsFont = new XFont("Playfair Display", 19, XFontStyle.Regular, uo);
 
         var row = (double y, double h) => new XRect(ContentLeft, y, ContentWidth, h);
         double cx = ContentLeft + ContentWidth / 2.0;

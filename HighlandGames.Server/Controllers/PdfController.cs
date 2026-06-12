@@ -21,16 +21,16 @@ public class PdfController : ControllerBase
     }
 
     [HttpGet("results")]
-    public async Task<IActionResult> GetResults([FromQuery] bool textOnly = false)
+    public async Task<IActionResult> GetResults([FromQuery] bool printMode = false)
     {
-        var pdf = await _pdfService.GenerateCombinedResultsAsync(textOnly);
+        var pdf = await _pdfService.GenerateCombinedResultsAsync(printMode);
         return File(pdf, "application/pdf", "Ergebnisse.pdf");
     }
 
     [HttpGet("certificates")]
-    public async Task<IActionResult> GetCertificates([FromQuery] bool textOnly = false)
+    public async Task<IActionResult> GetCertificates([FromQuery] bool printMode = false)
     {
-        var pdf = await _pdfService.GenerateCertificatesAsync(textOnly);
+        var pdf = await _pdfService.GenerateCertificatesAsync(printMode);
         return File(pdf, "application/pdf", "Urkunden.pdf");
     }
 }

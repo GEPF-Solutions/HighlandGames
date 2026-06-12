@@ -109,8 +109,8 @@ export function ResultsPage() {
     const tabs = [{ id: 'total', name: 'Gesamt' }, ...disciplines.map(d => ({ id: d.id, name: d.name }))];
 
     const genders = [
-        { label: '♂ Männer', color: '#7aadff' },
-        { label: '♀ Frauen', color: '#ff8aaa' },
+        { label: '♂ Gentlemen', color: '#7aadff' },
+        { label: '♀ Ladies', color: '#ff8aaa' },
     ];
 
     return (
