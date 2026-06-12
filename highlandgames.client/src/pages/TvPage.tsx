@@ -258,14 +258,14 @@ export function TvPage() {
             {/* Leaderboards */}
             <div style={{ flex: 1, display: 'flex', overflow: 'hidden', paddingTop: 20, paddingBottom: 12 }}>
                 <LeaderboardColumn
-                    label="♂ Männer"
+                    label="♂ Gentlemen"
                     accentColor="#7aadff"
                     entries={mLeaderboard}
                     shimmerIds={mShimmer}
                 />
                 <div style={{ width: 1, background: 'rgba(201,148,58,.15)', flexShrink: 0 }} />
                 <LeaderboardColumn
-                    label="♀ Frauen"
+                    label="♀ Ladies"
                     accentColor="#ff8aaa"
                     entries={fLeaderboard}
                     shimmerIds={fShimmer}

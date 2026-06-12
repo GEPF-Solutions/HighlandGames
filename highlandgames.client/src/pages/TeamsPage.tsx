@@ -63,7 +63,7 @@ export function TeamsPage() {
             <Separator />
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
-                {[{ label: '♂ Männer', color: '#7aadff', teams: mTeams }, { label: '♀ Frauen', color: '#ff8aaa', teams: fTeams }].map(({ label, color, teams }) => (
+                {[{ label: '♂ Gentlemen', color: '#7aadff', teams: mTeams }, { label: '♀ Ladies', color: '#ff8aaa', teams: fTeams }].map(({ label, color, teams }) => (
                     <div key={label} style={{ flex: '1 1 300px', minWidth: 0 }}>
                         <div style={{ fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color, marginBottom: 12 }}>
                             {label}
