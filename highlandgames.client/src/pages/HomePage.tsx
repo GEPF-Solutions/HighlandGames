@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { downloadPdf } from '../api/pdfApi';
 
 export function HomePage() {
     const navigate = useNavigate();
@@ -77,6 +78,26 @@ export function HomePage() {
                             flex: '1 1 0',
                         }}>
                             Zu den Disziplinen
+                        </button>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+                        <button onClick={() => downloadPdf('/pdf/results', 'Ergebnisse.pdf')} style={{
+                            fontFamily: 'Cinzel, serif', fontSize: 14, letterSpacing: 0,
+                            textTransform: 'uppercase', padding: '14px 32px', borderRadius: 2,
+                            cursor: 'pointer', background: 'transparent', color: 'var(--cream)',
+                            border: '1px solid rgba(240,230,204,.4)',
+                            display: 'inline-flex', alignItems: 'center', gap: 10,
+                            transition: 'background .15s, border-color .15s',
+                        }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(240,230,204,.08)'; e.currentTarget.style.borderColor = 'rgba(240,230,204,.7)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(240,230,204,.4)'; }}
+                        >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            Ergebnisliste herunterladen
                         </button>
                     </div>
                 </div>
