@@ -21,6 +21,7 @@ public class PdfController : ControllerBase
     }
 
     [HttpGet("results")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetResults([FromQuery] bool printMode = false)
     {
         var pdf = await _pdfService.GenerateCombinedResultsAsync(printMode);

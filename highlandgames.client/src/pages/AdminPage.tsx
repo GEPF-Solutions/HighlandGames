@@ -13,6 +13,7 @@ import { teamsApi } from '../api/teamsApi';
 import { disciplinesApi } from '../api/disciplinesApi';
 import { resultsApi } from '../api/resultsApi';
 import { getMatches, createMatch, updateMatch, deleteMatch, reorderMatches } from '../api/matches';
+import { downloadPdf } from '../api/pdfApi';
 import { useAuth } from '../hooks/useAuth';
 import { Separator } from '../components/Separator';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -651,21 +652,6 @@ export function AdminPage() {
         { id: 'tiebreaker', label: 'Stechen' },
         { id: 'downloads', label: 'Downloads' },
     ];
-
-    const downloadPdf = async (path: string, filename: string) => {
-        const token = localStorage.getItem('hg_token');
-        const response = await fetch(`/api${path}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!response.ok) return;
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-    };
 
     const tabBar = (
         <>
